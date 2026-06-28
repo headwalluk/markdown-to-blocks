@@ -1,5 +1,5 @@
 {
-  "name": "@headwalluk/markdown-to-blocks",
+  "name": "@headwall/markdown-to-blocks",
   "version": "1.0.0",
   "description": "Convert Markdown into serialised WordPress/Gutenberg block markup (core blocks, with <!-- wp:... --> delimiters).",
   "keywords": [

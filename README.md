@@ -2,11 +2,11 @@
 
 > Convert Markdown into serialised WordPress/Gutenberg **block markup** — HTML with `<!-- wp:… -->` delimiters that drops straight into the block editor with no "Convert to blocks" or "this block contains unexpected content" prompts.
 
-[![npm version](https://img.shields.io/npm/v/@headwalluk/markdown-to-blocks.svg)](https://www.npmjs.com/package/@headwalluk/markdown-to-blocks)
-[![npm downloads](https://img.shields.io/npm/dm/@headwalluk/markdown-to-blocks.svg)](https://www.npmjs.com/package/@headwalluk/markdown-to-blocks)
+[![npm version](https://img.shields.io/npm/v/@headwall/markdown-to-blocks.svg)](https://www.npmjs.com/package/@headwall/markdown-to-blocks)
+[![npm downloads](https://img.shields.io/npm/dm/@headwall/markdown-to-blocks.svg)](https://www.npmjs.com/package/@headwall/markdown-to-blocks)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![Node.js](https://img.shields.io/node/v/@headwalluk/markdown-to-blocks.svg)](https://nodejs.org)
-[![Types](https://img.shields.io/npm/types/@headwalluk/markdown-to-blocks.svg)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/node/v/@headwall/markdown-to-blocks.svg)](https://nodejs.org)
+[![Types](https://img.shields.io/npm/types/@headwall/markdown-to-blocks.svg)](https://www.typescriptlang.org/)
 
 `markdown-to-blocks` turns a Markdown string into **core-block** markup that WordPress parses into discrete native blocks. It was built so an AI agent (or any script) can read Markdown and `POST` reliable Gutenberg content to WordPress via the REST API — no browser, no `@wordpress/*` runtime dependency, no DOM.
 
@@ -22,7 +22,7 @@
 ### As a CLI (global)
 
 ```bash
-npm install -g @headwalluk/markdown-to-blocks
+npm install -g @headwall/markdown-to-blocks
 ```
 
 This puts the `md2blocks` command on your `PATH`. Requires **Node ≥ 18**.
@@ -30,7 +30,7 @@ This puts the `md2blocks` command on your `PATH`. Requires **Node ≥ 18**.
 ### As a library
 
 ```bash
-npm install @headwalluk/markdown-to-blocks
+npm install @headwall/markdown-to-blocks
 ```
 
 ---
@@ -53,7 +53,7 @@ cat BLOG-POST.md | md2blocks - > blog-post.html
 ### Library
 
 ```ts
-import { markdownToBlocks } from "@headwalluk/markdown-to-blocks";
+import { markdownToBlocks } from "@headwall/markdown-to-blocks";
 
 const html = markdownToBlocks("# Hello\n\nThis is **bold**.");
 // <!-- wp:heading -->
@@ -139,7 +139,7 @@ Same conversion, but returns one string per top-level block — handy if you wan
 Strip YAML frontmatter off the top of the document and convert only the body. Use the returned `frontmatter` to populate REST fields (title, slug, date…); those must never appear in `post_content`.
 
 ```ts
-import { parseMarkdownDocument } from "@headwalluk/markdown-to-blocks";
+import { parseMarkdownDocument } from "@headwall/markdown-to-blocks";
 
 const { frontmatter, blocks } = parseMarkdownDocument(`---
 title: Hello World
@@ -185,7 +185,7 @@ interface ResolvedImage {
 The converter never touches the network, so it can't upload media. Instead, your agent uploads each image to the media library (REST `wp/v2/media`) and supplies a `resolveImage` callback:
 
 ```ts
-import { markdownToBlocks } from "@headwalluk/markdown-to-blocks";
+import { markdownToBlocks } from "@headwall/markdown-to-blocks";
 
 const html = markdownToBlocks(markdown, {
   resolveImage(src, alt) {
