@@ -34,7 +34,7 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "md2blocks": "./dist/cli.js"
+    "md2blocks": "dist/cli.js"
   },
   "files": [
     "dist",
