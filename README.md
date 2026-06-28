@@ -3,8 +3,7 @@
 > Convert Markdown into serialised WordPress/Gutenberg **block markup** — HTML with `<!-- wp:… -->` delimiters that drops straight into the block editor with no "Convert to blocks" or "this block contains unexpected content" prompts.
 
 [![CI](https://github.com/headwalluk/markdown-to-blocks/actions/workflows/ci.yml/badge.svg)](https://github.com/headwalluk/markdown-to-blocks/actions/workflows/ci.yml)
-[![npm version](https://img.shields.io/npm/v/@headwall/markdown-to-blocks.svg)](https://www.npmjs.com/package/@headwall/markdown-to-blocks)
-[![npm downloads](https://img.shields.io/npm/dm/@headwall/markdown-to-blocks.svg)](https://www.npmjs.com/package/@headwall/markdown-to-blocks)
+[![version](https://img.shields.io/github/package-json/v/headwalluk/markdown-to-blocks?label=version)](https://www.npmjs.com/package/@headwall/markdown-to-blocks)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Node.js](https://img.shields.io/node/v/@headwall/markdown-to-blocks.svg)](https://nodejs.org)
 [![Types](https://img.shields.io/npm/types/@headwall/markdown-to-blocks.svg)](https://www.typescriptlang.org/)
