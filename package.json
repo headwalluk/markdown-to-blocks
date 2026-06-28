@@ -1,0 +1,59 @@
+{
+  "name": "@headwalluk/markdown-to-blocks",
+  "version": "0.1.0",
+  "description": "Convert Markdown into serialised WordPress/Gutenberg block markup (core blocks, with <!-- wp:... --> delimiters).",
+  "keywords": [
+    "markdown",
+    "wordpress",
+    "gutenberg",
+    "blocks",
+    "remark",
+    "cli"
+  ],
+  "type": "module",
+  "license": "MIT",
+  "author": "Paul Faulkner <paul@headwall-hosting.com>",
+  "engines": {
+    "node": ">=18"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "md2blocks": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "devDependencies": {
+    "@types/mdast": "^4.0.4",
+    "@types/node": "^22.10.0",
+    "@wordpress/block-library": "^10.0.0",
+    "@wordpress/blocks": "^15.22.0",
+    "jsdom": "^29.1.1",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.0",
+    "remark-parse": "^11.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.0.0",
+    "vitest": "^2.1.8",
+    "yaml": "^2.6.1"
+  }
+}
