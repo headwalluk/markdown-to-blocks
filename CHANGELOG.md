@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-06-28
+
+### Changed
+
+- **Require Node ≥ 20** (was ≥ 18). Node 18 is end-of-life; CI no longer tests
+  against it.
+
+### Added
+
+- GitHub Actions CI: `typecheck` + `build` + `test` across Node 20, 22, and 24
+  on every push and pull request to `main`.
+
 ## [1.0.0] - 2026-06-28
 
 First stable release. Output is validated against WordPress core's own block
@@ -40,5 +52,6 @@ parser and confirmed to import into the block editor with no recovery prompts.
 - ESM-only. Requires Node ≥ 18.
 - Zero runtime dependencies — all bundled into the published package.
 
-[Unreleased]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/headwalluk/markdown-to-blocks/releases/tag/v1.0.0

@@ -2,6 +2,7 @@
 
 > Convert Markdown into serialised WordPress/Gutenberg **block markup** — HTML with `<!-- wp:… -->` delimiters that drops straight into the block editor with no "Convert to blocks" or "this block contains unexpected content" prompts.
 
+[![CI](https://github.com/headwalluk/markdown-to-blocks/actions/workflows/ci.yml/badge.svg)](https://github.com/headwalluk/markdown-to-blocks/actions/workflows/ci.yml)
 [![npm version](https://img.shields.io/npm/v/@headwall/markdown-to-blocks.svg)](https://www.npmjs.com/package/@headwall/markdown-to-blocks)
 [![npm downloads](https://img.shields.io/npm/dm/@headwall/markdown-to-blocks.svg)](https://www.npmjs.com/package/@headwall/markdown-to-blocks)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
@@ -25,7 +26,7 @@
 npm install -g @headwall/markdown-to-blocks
 ```
 
-This puts the `md2blocks` command on your `PATH`. Requires **Node ≥ 18**.
+This puts the `md2blocks` command on your `PATH`. Requires **Node ≥ 20**.
 
 ### As a library
 
