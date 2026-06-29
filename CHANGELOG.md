@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-06-29
+
 ### Fixed
 
 - Reference-style links (`[text][ref]`) and images (`![alt][ref]`) are now
@@ -64,6 +66,7 @@ parser and confirmed to import into the block editor with no recovery prompts.
 - ESM-only. Requires Node ≥ 18.
 - Zero runtime dependencies — all bundled into the published package.
 
-[Unreleased]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/headwalluk/markdown-to-blocks/releases/tag/v1.0.0
