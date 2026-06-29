@@ -41,6 +41,9 @@
     "CHANGELOG.md"
   ],
   "sideEffects": false,
+  "overrides": {
+    "esbuild": "^0.28.1"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -62,7 +65,7 @@
     "typescript": "^5.7.2",
     "unified": "^11.0.5",
     "unist-util-visit": "^5.0.0",
-    "vitest": "^2.1.8",
+    "vitest": "^4.1.9",
     "yaml": "^2.6.1"
   }
 }
