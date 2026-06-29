@@ -1,8 +1,18 @@
-import type { PhrasingContent, Root, RootContent } from "mdast";
+import type {
+  Definition,
+  Image,
+  ImageReference,
+  Link,
+  LinkReference,
+  PhrasingContent,
+  Root,
+  RootContent,
+} from "mdast";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
+import { visit } from "unist-util-visit";
 import { renderInline } from "./inline.js";
 import {
   type ConvertOptions,
@@ -27,7 +37,47 @@ export function parseMarkdown(markdown: string, options: ResolvedOptions): Root 
   const processor = options.gfm ? base.use(remarkGfm) : base;
   const tree = processor.parse(markdown);
   const root = processor.runSync(tree) as Root;
+  resolveReferences(root);
   return root;
+}
+
+/**
+ * Resolve reference-style links/images (`[text][ref]`, `![alt][ref]`) against
+ * their `[ref]: url` definitions, rewriting them into plain `link`/`image` nodes
+ * in place. This keeps every block/inline renderer simple — they only ever see
+ * resolved nodes — and lets the paragraph-only-image → core/image detection work
+ * for reference images too. Unresolved references (no matching definition) are
+ * left as-is and fall through to best-effort text rendering.
+ */
+function resolveReferences(tree: Root): void {
+  const definitions = new Map<string, Definition>();
+  visit(tree, "definition", (node: Definition) => {
+    definitions.set(node.identifier, node);
+  });
+
+  visit(tree, "linkReference", (node: LinkReference) => {
+    const def = definitions.get(node.identifier);
+    if (def == null) {
+      return;
+    }
+    const link = node as unknown as Link;
+    link.type = "link";
+    link.url = def.url;
+    link.title = def.title ?? null;
+  });
+
+  visit(tree, "imageReference", (node: ImageReference) => {
+    const def = definitions.get(node.identifier);
+    if (def == null) {
+      return;
+    }
+    const alt = node.alt ?? "";
+    const image = node as unknown as Image;
+    image.type = "image";
+    image.url = def.url;
+    image.title = def.title ?? null;
+    image.alt = alt;
+  });
 }
 
 /** Build the render context whose hooks the block renderers recurse through. */

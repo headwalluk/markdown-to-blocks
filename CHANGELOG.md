@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Reference-style links (`[text][ref]`) and images (`![alt][ref]`) are now
+  resolved against their `[ref]: url` definitions instead of being silently
+  dropped (links lost their URL; images vanished entirely).
+
+### Changed
+
+- CLI: exit with a clear "no input" message and usage hint instead of hanging
+  when run on an interactive terminal with no file argument and nothing piped to
+  stdin.
+
 ## [1.1.0] - 2026-06-28
 
 ### Changed

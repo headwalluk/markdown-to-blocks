@@ -112,6 +112,17 @@ function run(argv: string[]): number {
     return 0;
   }
 
+  // Reading stdin with nothing piped in would hang forever on a TTY — fail fast
+  // with a usage hint instead.
+  const wantsStdin = args.input == null || args.input === "-";
+  if (wantsStdin && process.stdin.isTTY) {
+    process.stderr.write(
+      "md2blocks: no input provided. Pass -i <file>, give a filename, or pipe Markdown via stdin.\n\n",
+    );
+    process.stderr.write(HELP);
+    return 1;
+  }
+
   const markdown = readInput(args.input);
   const result = args.frontmatter
     ? `${JSON.stringify(parseMarkdownDocument(markdown, args.options), null, 2)}\n`
