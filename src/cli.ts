@@ -17,6 +17,7 @@ Options:
   --frontmatter             Emit JSON { frontmatter, blocks } instead of markup
   --heading-shift <n>       Shift all heading levels by n (default 0)
   --min-heading-level <n>   Clamp heading levels to [n, 6] (default 2)
+  --heading-anchors         Add an id/anchor to each heading from its text
   --code-language <mode>    'drop' (default) or 'class' (emit language-xxx)
   --unsupported <mode>      'html' (default) or 'skip'
   --no-gfm                  Disable GFM (tables, strikethrough, autolinks)
@@ -61,6 +62,9 @@ function parseArgs(argv: string[]): CliArgs {
         break;
       case "--min-heading-level":
         args.options.minHeadingLevel = Number(argv[++i]);
+        break;
+      case "--heading-anchors":
+        args.options.headingAnchors = true;
         break;
       case "--code-language":
         args.options.codeLanguage = argv[++i] as ConvertOptions["codeLanguage"];

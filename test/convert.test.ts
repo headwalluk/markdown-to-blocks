@@ -29,6 +29,50 @@ describe("headings", () => {
   });
 });
 
+describe("heading anchors", () => {
+  it("emits no id by default", () => {
+    expect(markdownToBlocks("## Overview")).toBe(
+      '<!-- wp:heading -->\n<h2 class="wp-block-heading">Overview</h2>\n<!-- /wp:heading -->',
+    );
+  });
+
+  it("derives a GitHub-style slug and matches core's serialiser byte-for-byte", () => {
+    // The `&` is dropped and its two surrounding spaces each become a hyphen,
+    // so the slug carries `--`, which core escapes as -- in the
+    // attribute JSON. `id` precedes `class` on the tag, as core emits it.
+    expect(
+      markdownToBlocks("## My fancy something & something", {
+        headingAnchors: true,
+      }),
+    ).toBe(
+      '<!-- wp:heading {"anchor":"my-fancy-something\\u002d\\u002dsomething"} -->\n' +
+        '<h2 id="my-fancy-something--something" class="wp-block-heading">My fancy something &amp; something</h2>\n' +
+        "<!-- /wp:heading -->",
+    );
+  });
+
+  it("orders level before anchor for non-h2 headings", () => {
+    expect(
+      markdownToBlocks("### **Deep** _dive_", { headingAnchors: true }),
+    ).toContain('<!-- wp:heading {"level":3,"anchor":"deep-dive"} -->');
+  });
+
+  it("de-duplicates repeated slugs per document", () => {
+    const out = markdownToBlocks("## Overview\n\n## Overview\n\n## Overview", {
+      headingAnchors: true,
+    });
+    expect(out).toContain('id="overview"');
+    expect(out).toContain('id="overview-1"');
+    expect(out).toContain('id="overview-2"');
+  });
+
+  it("omits the id when the heading slugs to nothing", () => {
+    expect(markdownToBlocks("## 🎉", { headingAnchors: true })).toBe(
+      '<!-- wp:heading -->\n<h2 class="wp-block-heading">🎉</h2>\n<!-- /wp:heading -->',
+    );
+  });
+});
+
 describe("images", () => {
   it("emits the library shape when the resolver returns an id", () => {
     const resolveImage = (src: string): ResolvedImage => ({

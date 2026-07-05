@@ -49,4 +49,13 @@ describe("WordPress core block validation", () => {
       expect(collectInvalid(blocks)).toEqual([]);
     });
   }
+
+  it("headingAnchors output validates against core's parser", () => {
+    // Not covered by the fixture loop, which only runs default options. Include
+    // a `--`/`&` slug and a duplicate so the anchor escaping is exercised.
+    const md = "## My fancy something & something\n\n## Overview\n\n## Overview";
+    const markup = markdownToBlocks(md, { headingAnchors: true });
+    const blocks = parse(markup) as ParsedBlock[];
+    expect(collectInvalid(blocks)).toEqual([]);
+  });
 });

@@ -102,6 +102,7 @@ Modes:
 Conversion options:
   --heading-shift <n>       Shift all heading levels by n (default 0)
   --min-heading-level <n>   Clamp heading levels to [n, 6] (default 2)
+  --heading-anchors         Add an id/anchor to each heading from its text
   --code-language <mode>    'drop' (default) or 'class' (emit language-xxx)
   --unsupported <mode>      'html' (default, wrap in core/html) or 'skip'
   --no-gfm                  Disable GFM (tables, strikethrough, autolinks)
@@ -161,6 +162,7 @@ Body text.
 |---|---|---|---|
 | `headingShift` | `number` | `0` | Shift every heading level by this amount before clamping. |
 | `minHeadingLevel` | `number` | `2` | Clamp resulting heading levels into `[min, 6]`. The default of `2` keeps body content from emitting an `h1`. |
+| `headingAnchors` | `boolean` | `false` | Derive an `id` (WordPress `anchor` attribute) for each heading from its text, so in-page anchor links work. GitHub-style slugs, de-duplicated per document (`overview`, `overview-1`, …). A heading that slugs to nothing (only punctuation/emoji) gets no `id`. |
 | `resolveImage` | `(src, alt, title?) => ResolvedImage \| undefined` | — | Resolve a Markdown image to a WordPress image (see [Images](#images)). |
 | `codeLanguage` | `'drop' \| 'class'` | `'drop'` | `'drop'` discards the fence language (core behaviour). `'class'` emits `<code class="language-xxx">` for a syntax-highlighting plugin. |
 | `unsupported` | `'html' \| 'skip'` | `'html'` | How to handle raw/unsupported nodes: wrap in `core/html`, or omit. |

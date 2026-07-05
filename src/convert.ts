@@ -14,6 +14,7 @@ import remarkParse from "remark-parse";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
 import { renderInline } from "./inline.js";
+import { createHeadingSlugger } from "./slug.js";
 import {
   type ConvertOptions,
   type RenderContext,
@@ -84,6 +85,7 @@ function resolveReferences(tree: Root): void {
 export function createContext(options: ResolvedOptions): RenderContext {
   const context: RenderContext = {
     options,
+    slugger: createHeadingSlugger(),
     renderInline(nodes: PhrasingContent[]): string {
       return renderInline(nodes, options);
     },

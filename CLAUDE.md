@@ -101,7 +101,8 @@ Two layers, both run by `npm test` (vitest):
 
 ## Scope (v1)
 
-Supported: paragraphs, headings, fenced/indented code, ordered/unordered/nested
+Supported: paragraphs, headings (optional text-derived anchors via
+`headingAnchors`), fenced/indented code, ordered/unordered/nested
 lists, blockquotes, thematic breaks, GFM tables, images (resolver-driven), raw
 HTML (→ `core/html`), and inline bold/italic/code/strikethrough/links/hard
 breaks. GFM task items render a glyph (`☐`/`☑`), not interactive inputs.

@@ -1,4 +1,5 @@
 import type { PhrasingContent, RootContent } from "mdast";
+import type { HeadingSlugger } from "./slug.js";
 
 /** A WordPress image resolved from a Markdown image reference. */
 export interface ResolvedImage {
@@ -20,6 +21,14 @@ export interface ConvertOptions {
 
   /** Clamp resulting heading levels into [min, 6]. Default min = 2 (avoid body h1). */
   minHeadingLevel?: number;
+
+  /**
+   * Derive an `id` (WordPress `anchor` attribute) for every heading from its
+   * text, so in-page anchor links work. GitHub-style slugs, de-duplicated per
+   * document (`overview`, `overview-1`, …). Default false. A heading that slugs
+   * to nothing (only punctuation/emoji) gets no `id`.
+   */
+  headingAnchors?: boolean;
 
   /**
    * Resolve a Markdown image to a WordPress image. Return undefined to emit an
@@ -49,6 +58,7 @@ export interface ConvertOptions {
 export interface ResolvedOptions {
   headingShift: number;
   minHeadingLevel: number;
+  headingAnchors: boolean;
   resolveImage?: ConvertOptions["resolveImage"];
   codeLanguage: "drop" | "class";
   unsupported: "html" | "skip";
@@ -68,6 +78,8 @@ export interface ParsedDocument {
  */
 export interface RenderContext {
   options: ResolvedOptions;
+  /** Per-document heading slugger (unique anchor ids). See `headingAnchors`. */
+  slugger: HeadingSlugger;
   /** Render inline (phrasing) children to an HTML string. */
   renderInline(nodes: PhrasingContent[]): string;
   /** Dispatch a single block node → markup string, or null if it should be dropped. */
@@ -80,6 +92,7 @@ export function resolveOptions(options?: ConvertOptions): ResolvedOptions {
   return {
     headingShift: options?.headingShift ?? 0,
     minHeadingLevel: options?.minHeadingLevel ?? 2,
+    headingAnchors: options?.headingAnchors ?? false,
     resolveImage: options?.resolveImage,
     codeLanguage: options?.codeLanguage ?? "drop",
     unsupported: options?.unsupported ?? "html",

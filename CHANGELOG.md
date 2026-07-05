@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-07-05
+
+### Added
+
+- `headingAnchors` option (CLI `--heading-anchors`): derive an `id` (WordPress
+  `anchor` attribute) for each heading from its text, so in-page anchor links
+  work. GitHub-style slugs, de-duplicated per document (`overview`,
+  `overview-1`, …); a heading that slugs to nothing (only punctuation/emoji)
+  gets no `id`. Off by default. Output matches core's serialiser byte-for-byte
+  (including `--` attribute escaping) and validates against the
+  WordPress parser.
+
 ## [1.1.1] - 2026-06-29
 
 ### Fixed
@@ -66,7 +78,8 @@ parser and confirmed to import into the block editor with no recovery prompts.
 - ESM-only. Requires Node ≥ 18.
 - Zero runtime dependencies — all bundled into the published package.
 
-[Unreleased]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/headwalluk/markdown-to-blocks/releases/tag/v1.0.0
