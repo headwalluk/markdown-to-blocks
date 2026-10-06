@@ -143,10 +143,30 @@ function run(argv: string[]): number {
 // Replaced at build time by tsup `define`; falls back for ts-node/dev runs.
 declare const VERSION: string;
 
-try {
-  process.exit(run(process.argv.slice(2)));
-} catch (error) {
+// Exit code a shell reports for a process killed by SIGPIPE (128 + 13).
+const EXIT_BROKEN_PIPE = 141;
+
+/** Writes a CLI error message to stderr. */
+function reportError(error: unknown): void {
   const message = error instanceof Error ? error.message : String(error);
   process.stderr.write(`md2blocks: ${message}\n`);
-  process.exit(1);
+}
+
+// Node ignores SIGPIPE, so a reader closing early (`| head`) surfaces as EPIPE.
+process.stdout.on("error", (error: NodeJS.ErrnoException) => {
+  if (error.code === "EPIPE") {
+    process.exit(EXIT_BROKEN_PIPE);
+  } else {
+    reportError(error);
+    process.exit(1);
+  }
+});
+
+// Set exitCode rather than calling process.exit(): exiting immediately drops
+// any stdout still queued for a full pipe.
+try {
+  process.exitCode = run(process.argv.slice(2));
+} catch (error) {
+  reportError(error);
+  process.exitCode = 1;
 }

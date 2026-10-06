@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- CLI output written to a pipe (`md2blocks -i post.md | …`, `$(md2blocks …)`,
+  `child_process`) was silently cut off at 64 KB with exit code 0, because the
+  CLI called `process.exit()` before stdout had drained. Output to a file or
+  via `-o` was unaffected. The CLI now sets `process.exitCode` and lets stdout
+  drain.
+
+### Changed
+
+- When the reader closes the pipe early (`md2blocks … | head`), the CLI exits
+  quietly with code 141, as a SIGPIPE-killed process would, so `set -o pipefail`
+  scripts can detect the incomplete output.
+
 ## [1.2.0] - 2026-07-05
 
 ### Added

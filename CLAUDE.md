@@ -75,6 +75,13 @@ Two layers, both run by `npm test` (vitest):
    `isValid` with zero issues. This is the empirical check on every
    version-sensitive class/attribute; if core changes one, this test tells you.
 
+`test/cli.test.ts` spawns the **built** `dist/cli.js` (stdout through a real
+pipe, exit codes), so `npm test` runs a `pretest` build first.
+
+The CLI must never call `process.exit()` after writing to stdout. Set
+`process.exitCode` instead: exiting at once drops output still queued for a
+full pipe, which truncated piped output at 64 KB in 1.2.0 and earlier.
+
 `@wordpress/*` packages are inlined by vitest (`server.deps.inline` in
 `vitest.config.ts`) because their ESM builds use bare JSON imports Node rejects.
 
