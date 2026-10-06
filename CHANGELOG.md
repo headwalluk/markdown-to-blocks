@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-10-06
+
 ### Fixed
 
 - CLI output written to a pipe (`md2blocks -i post.md | …`, `$(md2blocks …)`,
@@ -17,9 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Require Node ≥ 22** (was ≥ 20). Node 20 is end-of-life; CI now tests
+  Node 22 and 24, and the build targets `node22`.
 - When the reader closes the pipe early (`md2blocks … | head`), the CLI exits
   quietly with code 141, as a SIGPIPE-killed process would, so `set -o pipefail`
   scripts can detect the incomplete output.
+- Bundled `yaml` updated to 2.9.1. Output is now validated against
+  `@wordpress/block-library` 11 and `@wordpress/blocks` 16 (dev-only).
 
 ## [1.2.0] - 2026-07-05
 
@@ -92,7 +98,8 @@ parser and confirmed to import into the block editor with no recovery prompts.
 - ESM-only. Requires Node ≥ 18.
 - Zero runtime dependencies — all bundled into the published package.
 
-[Unreleased]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.0.0...v1.1.0

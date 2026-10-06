@@ -87,7 +87,7 @@ full pipe, which truncated piped output at 64 KB in 1.2.0 and earlier.
 
 ## Build, deps, release
 
-- **Build:** `tsup` → `dist/` (ESM only, `.d.ts`, sourcemaps). Node ≥ 20.
+- **Build:** `tsup` → `dist/` (ESM only, `.d.ts`, sourcemaps). Node ≥ 22.
 - **Zero runtime dependencies.** All deps (remark/unified/gfm/frontmatter/yaml)
   are `devDependencies` and bundled into `dist/` via `noExternal`. The published
   package has `dependencies: {}`. Keep it that way.
@@ -99,7 +99,7 @@ full pipe, which truncated piped output at 64 KB in 1.2.0 and earlier.
   lockfile inconsistent and break `npm ci` on the CI runners). Validate with
   `npm ci` if unsure.
 - **CI:** `.github/workflows/ci.yml` runs `typecheck → build → test` on Node
-  20/22/24 for pushes/PRs to `main`. There is intentionally **no publish job**.
+  22/24 for pushes/PRs to `main`. There is intentionally **no publish job**.
 - **Publishing is manual.** Do not run `npm publish` or set up auto-publish
   without an explicit go-ahead from the maintainer.
 - **Identity:** npm scope is `@headwall` (personal scope of npm user

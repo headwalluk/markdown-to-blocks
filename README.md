@@ -25,7 +25,7 @@
 npm install -g @headwall/markdown-to-blocks
 ```
 
-This puts the `md2blocks` command on your `PATH`. Requires **Node ≥ 20**.
+This puts the `md2blocks` command on your `PATH`. Requires **Node ≥ 22**.
 
 ### As a library
 
