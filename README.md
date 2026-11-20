@@ -101,10 +101,11 @@ Modes:
 
 Conversion options:
   --heading-shift <n>       Shift all heading levels by n (default 0)
-  --min-heading-level <n>   Clamp heading levels to [n, 6] (default 2)
+  --min-heading-level <n>   Clamp heading levels to [n, 6], n from 1 to 6 (default 2)
   --heading-anchors         Add an id/anchor to each heading from its text
   --code-language <mode>    'drop' (default) or 'class' (emit language-xxx)
-  --unsupported <mode>      'html' (default, wrap in core/html) or 'skip'
+  --unsupported <mode>      'html' (default, wrap in core/html) or 'skip' (drop block and inline HTML)
+  --url-schemes <mode>      'safe' (default: http(s)/mailto/tel/relative) or 'any'
   --no-gfm                  Disable GFM (tables, strikethrough, autolinks)
 
   -h, --help                Show help
@@ -165,8 +166,11 @@ Body text.
 | `headingAnchors` | `boolean` | `false` | Derive an `id` (WordPress `anchor` attribute) for each heading from its text, so in-page anchor links work. GitHub-style slugs, de-duplicated per document (`overview`, `overview-1`, …). A heading that slugs to nothing (only punctuation/emoji) gets no `id`. |
 | `resolveImage` | `(src, alt, title?) => ResolvedImage \| undefined` | — | Resolve a Markdown image to a WordPress image (see [Images](#images)). |
 | `codeLanguage` | `'drop' \| 'class'` | `'drop'` | `'drop'` discards the fence language (core behaviour). `'class'` emits `<code class="language-xxx">` for a syntax-highlighting plugin. |
-| `unsupported` | `'html' \| 'skip'` | `'html'` | How to handle raw/unsupported nodes: wrap in `core/html`, or omit. |
+| `unsupported` | `'html' \| 'skip'` | `'html'` | How to handle raw HTML and unsupported nodes. `'html'`: block HTML goes into `core/html` and inline HTML passes through verbatim. `'skip'`: both are omitted. |
+| `urlSchemes` | `'safe' \| 'any'` | `'safe'` | Restrict link and image URLs to safe schemes (see [URL safety](#url-safety)). `'any'` turns the check off. |
 | `gfm` | `boolean` | `true` | Enable GFM (tables, strikethrough, autolinks). |
+
+Invalid option values (a non-integer `headingShift`, a `minHeadingLevel` outside 1–6, an unknown mode string) throw a `RangeError` listing every problem.
 
 ### `ResolvedImage`
 
@@ -200,6 +204,27 @@ const html = markdownToBlocks(markdown, {
 
 - When `resolveImage` returns an object **with an `id`**, you get the attachment shape: `wp:image {"id":…,"sizeSlug":…,"linkDestination":"none"}`, a `size-<slug>` figure class, and a `wp-image-<id>` class on the `<img>`.
 - When it returns `undefined`, you get the **external** fallback: a plain `<figure class="wp-block-image">` / `<img>` with no attachment id.
+- An `id` must be a positive integer; anything else throws a `RangeError`.
+- The final URL, whether from the Markdown or the resolver, is subject to the [URL safety](#url-safety) policy.
+
+---
+
+## Untrusted Markdown
+
+The converter escapes text correctly, but it is **not an HTML sanitiser**. When the Markdown comes from somewhere you don't control (user input, scraped pages, another model's output):
+
+- **Raw HTML passes through by default.** Use `unsupported: 'skip'` to drop both block and inline HTML. WordPress strips unsafe HTML on save only for accounts without the `unfiltered_html` capability, so don't rely on that when posting as an administrator.
+- **Shortcodes in prose still run.** `[gallery]` in a paragraph is rendered by WordPress as a shortcode, exactly as if typed in the editor. Inside fenced code blocks `[` is escaped as `&#91;`, matching what the block editor itself saves, so code examples display literally. Inline code is not escaped: the editor would undo it on the next edit.
+- **Size is the caller's to bound.** Nesting deeper than 200 levels throws a `RangeError`; overall input size is not limited, so cap it before converting if the source is untrusted.
+
+### URL safety
+
+By default (`urlSchemes: 'safe'`):
+
+- **Links** keep their `href` only for `http:`, `https:`, `mailto:`, `tel:` and relative URLs (`/about`, `#top`). Any other scheme (`javascript:`, `data:`, `vbscript:`, …) renders as the link text alone.
+- **Images** need an `http:`, `https:` or relative URL; any other image is dropped.
+
+The scheme is read the way a browser reads it, so `JAVASCRIPT:`, `java&#9;script:` and leading whitespace are all caught. Pass `urlSchemes: 'any'` (`--url-schemes any`) to turn the check off.
 
 ---
 
@@ -237,6 +262,7 @@ By default `headingShift` is `0` and `minHeadingLevel` is `2`, so a body `#` bec
 - **No interactive task-list checkboxes** — a glyph is rendered instead.
 - **No media uploads** — your agent uploads and feeds results via `resolveImage`.
 - **No block-theme / Site Editor constructs** (columns, groups, cover, etc.). Core content blocks only.
+- **Nesting is capped at 200 levels** (quotes, lists and inline formatting combined).
 
 ---
 

@@ -2,7 +2,11 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { markdownToBlocks } from "./convert.js";
 import { parseMarkdownDocument } from "./document.js";
-import type { ConvertOptions } from "./types.js";
+import {
+  applyOptionDefaults,
+  type ConvertOptions,
+  validateOptions,
+} from "./types.js";
 
 const HELP = `md2blocks — convert Markdown to WordPress/Gutenberg block markup
 
@@ -16,10 +20,11 @@ Options:
   -o, --output <file>       Output file (default: stdout)
   --frontmatter             Emit JSON { frontmatter, blocks } instead of markup
   --heading-shift <n>       Shift all heading levels by n (default 0)
-  --min-heading-level <n>   Clamp heading levels to [n, 6] (default 2)
+  --min-heading-level <n>   Clamp heading levels to [n, 6], n from 1 to 6 (default 2)
   --heading-anchors         Add an id/anchor to each heading from its text
   --code-language <mode>    'drop' (default) or 'class' (emit language-xxx)
-  --unsupported <mode>      'html' (default) or 'skip'
+  --unsupported <mode>      'html' (default) or 'skip' (drop block and inline HTML)
+  --url-schemes <mode>      'safe' (default: http(s)/mailto/tel/relative) or 'any'
   --no-gfm                  Disable GFM (tables, strikethrough, autolinks)
   -h, --help                Show this help
   -v, --version             Show version
@@ -32,45 +37,85 @@ interface CliArgs {
   help: boolean;
   version: boolean;
   options: ConvertOptions;
+  /** Every argument problem found, reported together before any conversion. */
+  errors: string[];
 }
 
+/** Parse an integer flag value, recording an error instead when it isn't one. */
+function parseIntegerFlag(
+  flag: string,
+  value: string | undefined,
+  errors: string[],
+): number | undefined {
+  let parsed: number | undefined;
+  if (value != null) {
+    const candidate = value.trim() === "" ? Number.NaN : Number(value);
+    if (Number.isInteger(candidate)) {
+      parsed = candidate;
+    } else {
+      errors.push(`${flag} expects an integer (got ${JSON.stringify(value)})`);
+    }
+  }
+  return parsed;
+}
+
+/** Parse argv into CLI args, collecting every unknown flag or bad value in `errors`. */
 function parseArgs(argv: string[]): CliArgs {
   const args: CliArgs = {
     frontmatter: false,
     help: false,
     version: false,
     options: {},
+    errors: [],
   };
-  let positional: string | undefined;
+  const positionals: string[] = [];
 
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
+  let index = 0;
+  while (index < argv.length) {
+    const arg = argv[index] ?? "";
+    index += 1;
+
+    // Reads the value following a value-taking flag; `-1` is a valid value.
+    const takeValue = (): string | undefined => {
+      const value = argv[index];
+      if (value == null) {
+        args.errors.push(`${arg} requires a value`);
+      } else {
+        index += 1;
+      }
+      return value;
+    };
+
     switch (arg) {
       case "-i":
       case "--input":
-        args.input = argv[++i];
+        args.input = takeValue();
         break;
       case "-o":
       case "--output":
-        args.output = argv[++i];
+        args.output = takeValue();
         break;
       case "--frontmatter":
         args.frontmatter = true;
         break;
       case "--heading-shift":
-        args.options.headingShift = Number(argv[++i]);
+        args.options.headingShift = parseIntegerFlag(arg, takeValue(), args.errors);
         break;
       case "--min-heading-level":
-        args.options.minHeadingLevel = Number(argv[++i]);
+        args.options.minHeadingLevel = parseIntegerFlag(arg, takeValue(), args.errors);
         break;
       case "--heading-anchors":
         args.options.headingAnchors = true;
         break;
       case "--code-language":
-        args.options.codeLanguage = argv[++i] as ConvertOptions["codeLanguage"];
+        // Mode values are checked by validateOptions below.
+        args.options.codeLanguage = takeValue() as ConvertOptions["codeLanguage"];
         break;
       case "--unsupported":
-        args.options.unsupported = argv[++i] as ConvertOptions["unsupported"];
+        args.options.unsupported = takeValue() as ConvertOptions["unsupported"];
+        break;
+      case "--url-schemes":
+        args.options.urlSchemes = takeValue() as ConvertOptions["urlSchemes"];
         break;
       case "--no-gfm":
         args.options.gfm = false;
@@ -84,17 +129,27 @@ function parseArgs(argv: string[]): CliArgs {
         args.version = true;
         break;
       default:
-        if (arg != null && !arg.startsWith("-") && positional == null) {
-          positional = arg;
+        if (arg.startsWith("-") && arg !== "-") {
+          args.errors.push(`unknown option ${arg}`);
+        } else {
+          positionals.push(arg);
         }
         break;
     }
   }
 
   // A bare positional file acts as input when -i wasn't given.
-  if (args.input == null && positional != null) {
+  const [positional, ...extra] = positionals;
+  if (positional != null && args.input == null) {
     args.input = positional;
+  } else if (positional != null) {
+    extra.unshift(positional);
   }
+  for (const unexpected of extra) {
+    args.errors.push(`unexpected argument ${JSON.stringify(unexpected)}`);
+  }
+
+  args.errors.push(...validateOptions(applyOptionDefaults(args.options)));
   return args;
 }
 
@@ -114,6 +169,13 @@ function run(argv: string[]): number {
   if (args.version) {
     process.stdout.write(`${VERSION}\n`);
     return 0;
+  }
+  if (args.errors.length > 0) {
+    for (const error of args.errors) {
+      process.stderr.write(`md2blocks: ${error}\n`);
+    }
+    process.stderr.write("Run md2blocks --help for usage.\n");
+    return 1;
   }
 
   // Reading stdin with nothing piped in would hang forever on a TTY — fail fast

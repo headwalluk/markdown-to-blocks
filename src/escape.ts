@@ -1,16 +1,6 @@
 /**
- * Escaping helpers.
- *
- * Discipline (see hand-off §5.3 / §5.10):
- *  - Escape `&`, `<`, `>` only. Never escape `"` — neither code nor the
- *    attributes we emit require it.
- *  - Escape exactly once, straight from the raw mdast `value`. Formatting nodes
- *    emit tags directly and must not be re-escaped (double-encoding such as
- *    `&amp;lt;` is a bug).
- *
- * `escapeText` and `escapeCode` are intentionally identical in behaviour today;
- * they are kept separate so the call sites document intent and so the two can
- * diverge later without hunting down every caller.
+ * Escaping helpers. Text and code escape `& < >` once, from the raw mdast
+ * `value`; attributes also escape `"`. See "Escaping discipline" in CLAUDE.md.
  */
 
 /** Escape `&`, `<`, `>` in visible text content. `&` must be replaced first. */

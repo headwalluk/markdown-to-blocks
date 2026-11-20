@@ -2,9 +2,10 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parse } from "@wordpress/blocks";
+import { createBlock, parse, serialize } from "@wordpress/blocks";
 import { registerCoreBlocks } from "@wordpress/block-library";
 import { beforeAll, describe, expect, it } from "vitest";
+import { escapeCode } from "../src/escape.js";
 import { markdownToBlocks } from "../src/index.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -57,5 +58,35 @@ describe("WordPress core block validation", () => {
     const markup = markdownToBlocks(md, { headingAnchors: true });
     const blocks = parse(markup) as ParsedBlock[];
     expect(collectInvalid(blocks)).toEqual([]);
+  });
+
+  it("non-default heading levels and library images validate", () => {
+    const md = "# Top\n\n## Second\n\n![Alt](x.png)";
+    const markup = markdownToBlocks(md, {
+      headingShift: -1,
+      minHeadingLevel: 1,
+      resolveImage: () => ({
+        url: "https://site/wp-content/uploads/x.png",
+        id: 42,
+        sizeSlug: "large",
+        caption: "A caption",
+      }),
+    });
+    const blocks = parse(markup) as ParsedBlock[];
+    expect(collectInvalid(blocks)).toEqual([]);
+  });
+
+  it("code blocks match core's serialiser byte-for-byte, shortcode/embed escaping included", () => {
+    // Samples avoid `>`: core leaves it raw where we emit `&gt;` (equivalent, both valid).
+    const samples = [
+      '[gallery ids="1"] & [/gallery]',
+      "https://example.com/first\n  https://example.com/second\nsee https://x.test",
+      "  http://indented.test/path  \nnext",
+      "[[double]] [unclosed",
+    ];
+    for (const sample of samples) {
+      const expected = serialize([createBlock("core/code", { content: escapeCode(sample) })]);
+      expect(markdownToBlocks(`~~~\n${sample}\n~~~`), sample).toBe(expected);
+    }
   });
 });

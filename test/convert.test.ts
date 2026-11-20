@@ -92,6 +92,17 @@ describe("images", () => {
     );
   });
 
+  it("escapes a resolver-supplied sizeSlug in the attributes and class", () => {
+    const out = markdownToBlocks("![Alt](x.png)", {
+      resolveImage: () => ({ url: "x.png", id: 7, sizeSlug: 'x-->"y' }),
+    });
+    expect(out).toBe(
+      '<!-- wp:image {"id":7,"sizeSlug":"x\\u002d\\u002d\\u003e\\"y","linkDestination":"none"} -->\n' +
+        '<figure class="wp-block-image size-x--&gt;&quot;y"><img src="x.png" alt="Alt" class="wp-image-7"/></figure>\n' +
+        "<!-- /wp:image -->",
+    );
+  });
+
   it("falls back to the external shape when the resolver returns undefined", () => {
     const out = markdownToBlocks("![Alt](https://ext/x.png)", {
       resolveImage: () => undefined,
@@ -137,5 +148,119 @@ describe("markdownToBlockList", () => {
   it("returns one entry per top-level block", () => {
     const list = markdownToBlockList("# A\n\nbody\n");
     expect(list).toHaveLength(2);
+  });
+});
+
+describe("code language class", () => {
+  it("escapes the fence language inside the class attribute", () => {
+    const out = markdownToBlocks('```js"onmouseover="x\ncode\n```', {
+      codeLanguage: "class",
+    });
+    expect(out).toContain('<code class="language-js&quot;onmouseover=&quot;x">');
+  });
+});
+
+describe("option validation", () => {
+  it("throws one RangeError listing every invalid option", () => {
+    const convert = () =>
+      markdownToBlocks("# Title", {
+        headingShift: Number.NaN,
+        minHeadingLevel: 0,
+        codeLanguage: "colour" as "class",
+        unsupported: "keep" as "skip",
+      });
+    expect(convert).toThrow(RangeError);
+    expect(convert).toThrow(
+      "invalid options:\n" +
+        "  headingShift must be an integer (got NaN)\n" +
+        "  minHeadingLevel must be an integer from 1 to 6 (got 0)\n" +
+        "  codeLanguage must be 'drop' or 'class' (got \"colour\")\n" +
+        "  unsupported must be 'html' or 'skip' (got \"keep\")",
+    );
+  });
+
+  it("accepts a negative shift with minHeadingLevel 1", () => {
+    const out = markdownToBlocks("## Title", { headingShift: -1, minHeadingLevel: 1 });
+    expect(out).toContain('<h1 class="wp-block-heading">Title</h1>');
+  });
+
+  it("validates parseMarkdownDocument options too", () => {
+    expect(() => parseMarkdownDocument("text", { minHeadingLevel: 7 })).toThrow(
+      /minHeadingLevel must be an integer from 1 to 6 \(got 7\)/,
+    );
+  });
+});
+
+describe("raw HTML in skip mode", () => {
+  it("drops inline HTML as well as block HTML", () => {
+    const out = markdownToBlocks("a <b>bold</b> <!-- wp:separator /--> z\n\n<div>block</div>", {
+      unsupported: "skip",
+    });
+    expect(out).toBe("<!-- wp:paragraph -->\n<p>a bold  z</p>\n<!-- /wp:paragraph -->");
+  });
+
+  it("keeps inline HTML by default", () => {
+    expect(markdownToBlocks("a <kbd>K</kbd>")).toContain("<p>a <kbd>K</kbd></p>");
+  });
+});
+
+describe("URL scheme policy", () => {
+  it("keeps the text but drops the href of unsafe links", () => {
+    const md =
+      "[direct](javascript:alert(1)) [entity](javascript&#58;alert(2)) [ref][evil] [ok](https://x.test)\n\n" +
+      "[evil]: JAVASCRIPT:alert(3)";
+    expect(markdownToBlocks(md)).toBe(
+      '<!-- wp:paragraph -->\n<p>direct entity ref <a href="https://x.test">ok</a></p>\n<!-- /wp:paragraph -->',
+    );
+  });
+
+  it("keeps mailto, tel, relative and fragment links", () => {
+    const out = markdownToBlocks("[a](mailto:a@x.test) [b](tel:+44) [c](/about) [d](#top)");
+    expect(out).toContain('<a href="mailto:a@x.test">a</a> <a href="tel:+44">b</a> <a href="/about">c</a> <a href="#top">d</a>');
+  });
+
+  it("drops images with unsafe sources, block and inline", () => {
+    expect(markdownToBlocks("![x](javascript:alert(1))")).toBe("");
+    expect(markdownToBlocks("![x](data:image/png;base64,AAAA)")).toBe("");
+    expect(markdownToBlocks("text ![x](javascript:alert(1)) more")).toContain("<p>text  more</p>");
+  });
+
+  it("applies the image policy to resolver-supplied URLs", () => {
+    const out = markdownToBlocks("![x](a.png)", {
+      resolveImage: () => ({ url: "javascript:alert(1)", id: 3 }),
+    });
+    expect(out).toBe("");
+  });
+
+  it("passes any scheme with urlSchemes 'any'", () => {
+    const out = markdownToBlocks("[x](javascript:void(0)) ![i](data:image/png;base64,AA)", {
+      urlSchemes: "any",
+    });
+    expect(out).toContain('<a href="javascript:void(0)">x</a> <img src="data:image/png;base64,AA" alt="i"/>');
+  });
+});
+
+describe("resolver id validation", () => {
+  for (const badId of [0, -1, 1.5, Number.NaN, '1" onerror="x']) {
+    it(`throws for id ${JSON.stringify(badId)}, block and inline`, () => {
+      const resolveImage = (): ResolvedImage => ({ url: "x.png", id: badId as number });
+      expect(() => markdownToBlocks("![a](x.png)", { resolveImage })).toThrow(
+        /resolveImage returned an invalid id for "x\.png": expected a positive integer/,
+      );
+      expect(() => markdownToBlocks("t ![a](x.png)", { resolveImage })).toThrow(RangeError);
+    });
+  }
+});
+
+describe("nesting limit", () => {
+  it("throws a RangeError instead of overflowing the stack", () => {
+    expect(() => markdownToBlocks(`${">".repeat(3000)} x`)).toThrow(
+      "Markdown nests 3002 levels deep; the limit is 200",
+    );
+  });
+
+  it("accepts nesting up to the limit", () => {
+    expect(markdownToBlocks(`${">".repeat(198)} x`)).toContain("<p>x</p>");
+    expect(() => markdownToBlocks(`${">".repeat(199)} x`)).toThrow(RangeError);
   });
 });

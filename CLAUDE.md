@@ -28,6 +28,9 @@ string[]  ──join("\n\n")──▶  block markup string
   block mapping is the one obvious `switch` in `convert.ts`.
 - `src/inline.ts` — inline (phrasing) renderer; returns inner HTML.
 - `src/escape.ts` — escaping helpers.
+- `src/url.ts` — link/image URL scheme policy (`urlSchemes`).
+- `src/resolve-image.ts` — runs `resolveImage`, validates its `id`, applies
+  the image URL policy; shared by the block and inline image renderers.
 - `src/document.ts` — `parseMarkdownDocument` (frontmatter via `yaml`).
 - `src/cli.ts` — the `md2blocks` CLI. **All `fs`/`stdout` lives here.**
 
@@ -46,7 +49,12 @@ string[]  ──join("\n\n")──▶  block markup string
   mdast `value` of text/inlineCode/code nodes. Formatting nodes emit tags
   directly and must not be re-escaped (double-encoding like `&amp;lt;` is a bug).
   Do not escape quotes in visible/code text; attribute values (`href`/`src`) do
-  escape `&` and `"` for safety.
+  escape `&` and `"` for safety. Code blocks additionally apply core/code's own
+  save-time `escape()` (`[` → `&#91;`, first isolated URL's `//` →
+  `&#47;&#47;`); `test/validate.test.ts` checks this against core's serialiser.
+- **URL policy.** Every link `href` and image `src` (Markdown or resolver) goes
+  through `src/url.ts` unless `urlSchemes: 'any'`. New URL-emitting code must
+  too.
 
 ## Code style
 

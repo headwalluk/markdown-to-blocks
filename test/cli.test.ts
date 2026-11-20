@@ -78,4 +78,59 @@ describe("md2blocks CLI", () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toMatch(/^md2blocks: ENOENT/);
   });
+
+  it("reports every argument error at once and exits 1 without converting", () => {
+    const inputPath = join(WORK_DIR, "args.md");
+    const outputPath = join(WORK_DIR, "args.html");
+    writeFileSync(inputPath, "# Title\n");
+    const result = spawnSync(
+      process.execPath,
+      [
+        CLI_PATH,
+        "--bogus",
+        "--heading-shift",
+        "abc",
+        "--min-heading-level",
+        "9",
+        "--code-language",
+        "colour",
+        "-i",
+        inputPath,
+        "extra.md",
+        "-o",
+        outputPath,
+        "--unsupported",
+      ],
+      { encoding: "utf8" },
+    );
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe(
+      [
+        "md2blocks: unknown option --bogus",
+        'md2blocks: --heading-shift expects an integer (got "abc")',
+        "md2blocks: --unsupported requires a value",
+        'md2blocks: unexpected argument "extra.md"',
+        "md2blocks: minHeadingLevel must be an integer from 1 to 6 (got 9)",
+        "md2blocks: codeLanguage must be 'drop' or 'class' (got \"colour\")",
+        "Run md2blocks --help for usage.",
+        "",
+      ].join("\n"),
+    );
+    expect(() => readFileSync(outputPath, "utf8")).toThrow(/ENOENT/);
+  });
+
+  it("accepts a negative --heading-shift value", () => {
+    const inputPath = join(WORK_DIR, "shift.md");
+    writeFileSync(inputPath, "## Title\n");
+    const result = spawnSync(
+      process.execPath,
+      [CLI_PATH, inputPath, "--heading-shift", "-1", "--min-heading-level", "1"],
+      { encoding: "utf8" },
+    );
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('<h1 class="wp-block-heading">Title</h1>');
+  });
 });

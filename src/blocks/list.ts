@@ -1,28 +1,39 @@
 import type { List, ListItem } from "mdast";
+import { serializeBlockAttributes } from "../attributes.js";
 import type { RenderContext } from "../types.js";
 
 /**
  * List → core/list containing core/list-item children (WP 6.0+).
  *
- * Whitespace is exact and load-bearing (hand-off §5.4):
+ * Whitespace is exact and load-bearing (matches WordPress's serializer):
  *  - the first `<!-- wp:list-item -->` sits on the SAME line as the opening
  *    `<ul|ol class="wp-block-list">`;
  *  - list items are separated by one blank line;
  *  - the final `<!-- /wp:list-item -->` attaches directly to `</ul|ol>`.
  *
  * A nested list lives INSIDE its parent `<li>`, immediately after the item text
- * and before `</li>`.
+ * and before `</li>`. An ordered list not starting at 1 carries `start` in both
+ * the attributes and on the `<ol>`, ahead of `class` as core serialises it.
  */
 export function renderList(node: List, ctx: RenderContext): string {
   const tag = node.ordered ? "ol" : "ul";
-  const attrs = node.ordered ? ' {"ordered":true}' : "";
+  const attributes: Record<string, unknown> = {};
+  let startAttr = "";
+  if (node.ordered) {
+    attributes.ordered = true;
+    if (node.start != null && node.start !== 1) {
+      attributes.start = node.start;
+      startAttr = ` start="${node.start}"`;
+    }
+  }
+  const attrs = serializeBlockAttributes(attributes);
 
   const items: string[] = [];
   for (const child of node.children) {
     items.push(renderListItem(child, ctx));
   }
 
-  const inner = `<${tag} class="wp-block-list">${items.join("\n\n")}</${tag}>`;
+  const inner = `<${tag}${startAttr} class="wp-block-list">${items.join("\n\n")}</${tag}>`;
   return `<!-- wp:list${attrs} -->\n${inner}\n<!-- /wp:list -->`;
 }
 

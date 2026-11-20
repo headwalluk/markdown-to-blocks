@@ -19,7 +19,7 @@ export interface ConvertOptions {
    */
   headingShift?: number;
 
-  /** Clamp resulting heading levels into [min, 6]. Default min = 2 (avoid body h1). */
+  /** Clamp resulting heading levels into [min, 6]; min must be 1–6. Default 2 (avoid body h1). */
   minHeadingLevel?: number;
 
   /**
@@ -47,8 +47,18 @@ export interface ConvertOptions {
    */
   codeLanguage?: "drop" | "class";
 
-  /** How to handle unsupported / raw-HTML nodes. 'html' (default) → core/html. 'skip' → omit. */
+  /**
+   * How to handle unsupported / raw-HTML nodes. 'html' (default): block HTML →
+   * core/html, inline HTML verbatim. 'skip': omit both.
+   */
   unsupported?: "html" | "skip";
+
+  /**
+   * 'safe' (default): links keep their href only for http(s), mailto, tel or
+   * relative URLs (otherwise just the link text renders); images need http(s)
+   * or relative URLs (otherwise they are dropped). 'any': no scheme check.
+   */
+  urlSchemes?: "safe" | "any";
 
   /** Enable GFM (tables, strikethrough, autolinks). Default true. */
   gfm?: boolean;
@@ -62,6 +72,7 @@ export interface ResolvedOptions {
   resolveImage?: ConvertOptions["resolveImage"];
   codeLanguage: "drop" | "class";
   unsupported: "html" | "skip";
+  urlSchemes: "safe" | "any";
   gfm: boolean;
 }
 
@@ -88,7 +99,12 @@ export interface RenderContext {
   renderBlocks(nodes: RootContent[]): string[];
 }
 
-export function resolveOptions(options?: ConvertOptions): ResolvedOptions {
+const CODE_LANGUAGE_MODES: readonly string[] = ["drop", "class"];
+const UNSUPPORTED_MODES: readonly string[] = ["html", "skip"];
+const URL_SCHEME_MODES: readonly string[] = ["safe", "any"];
+
+/** Fill in defaults for any option left undefined, without validating. */
+export function applyOptionDefaults(options?: ConvertOptions): ResolvedOptions {
   return {
     headingShift: options?.headingShift ?? 0,
     minHeadingLevel: options?.minHeadingLevel ?? 2,
@@ -96,6 +112,39 @@ export function resolveOptions(options?: ConvertOptions): ResolvedOptions {
     resolveImage: options?.resolveImage,
     codeLanguage: options?.codeLanguage ?? "drop",
     unsupported: options?.unsupported ?? "html",
+    urlSchemes: options?.urlSchemes ?? "safe",
     gfm: options?.gfm ?? true,
   };
+}
+
+/** Apply defaults to `options`, throwing a RangeError that lists every invalid value. */
+export function resolveOptions(options?: ConvertOptions): ResolvedOptions {
+  const resolved = applyOptionDefaults(options);
+  const problems = validateOptions(resolved);
+  if (problems.length > 0) {
+    throw new RangeError(`invalid options:\n  ${problems.join("\n  ")}`);
+  }
+  return resolved;
+}
+
+/** Return one message per invalid value in `options`; empty when all are valid. */
+export function validateOptions(options: ResolvedOptions): string[] {
+  const problems: string[] = [];
+  if (!Number.isInteger(options.headingShift)) {
+    problems.push(`headingShift must be an integer (got ${String(options.headingShift)})`);
+  }
+  const minLevel = options.minHeadingLevel;
+  if (!Number.isInteger(minLevel) || minLevel < 1 || minLevel > 6) {
+    problems.push(`minHeadingLevel must be an integer from 1 to 6 (got ${String(minLevel)})`);
+  }
+  if (!CODE_LANGUAGE_MODES.includes(options.codeLanguage)) {
+    problems.push(`codeLanguage must be 'drop' or 'class' (got ${JSON.stringify(options.codeLanguage)})`);
+  }
+  if (!UNSUPPORTED_MODES.includes(options.unsupported)) {
+    problems.push(`unsupported must be 'html' or 'skip' (got ${JSON.stringify(options.unsupported)})`);
+  }
+  if (!URL_SCHEME_MODES.includes(options.urlSchemes)) {
+    problems.push(`urlSchemes must be 'safe' or 'any' (got ${JSON.stringify(options.urlSchemes)})`);
+  }
+  return problems;
 }

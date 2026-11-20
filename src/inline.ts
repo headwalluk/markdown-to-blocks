@@ -10,7 +10,9 @@ import type {
   Text,
 } from "mdast";
 import { escapeAttribute, escapeCode, escapeText } from "./escape.js";
+import { resolveMarkdownImage } from "./resolve-image.js";
 import type { ResolvedOptions } from "./types.js";
+import { isSafeLinkUrl } from "./url.js";
 
 /**
  * Render a list of inline (phrasing) mdast nodes to an HTML string.
@@ -62,8 +64,8 @@ function renderInlineNode(
       out = renderInlineImage(node as Image, options);
       break;
     case "html":
-      // Raw inline HTML is passed through verbatim (not escaped).
-      out = (node as Html).value;
+      // Raw inline HTML is passed through verbatim, or dropped under 'skip'.
+      out = options.unsupported === "skip" ? "" : (node as Html).value;
       break;
     default:
       // Unknown / unhandled phrasing node: recurse into children if any,
@@ -74,30 +76,36 @@ function renderInlineNode(
   return out;
 }
 
+/** Render a link, or only its text when the url fails the `urlSchemes` policy. */
 function renderLink(node: Link, options: ResolvedOptions): string {
-  const href = escapeAttribute(node.url);
-  const title =
-    node.title != null && node.title !== ""
-      ? ` title="${escapeAttribute(node.title)}"`
-      : "";
   const inner = renderInline(node.children, options);
-  return `<a href="${href}"${title}>${inner}</a>`;
+  let out = inner;
+  if (options.urlSchemes === "any" || isSafeLinkUrl(node.url)) {
+    const href = escapeAttribute(node.url);
+    const title =
+      node.title != null && node.title !== ""
+        ? ` title="${escapeAttribute(node.title)}"`
+        : "";
+    out = `<a href="${href}"${title}>${inner}</a>`;
+  }
+  return out;
 }
 
 /**
  * Inline image (image mixed with text inside a paragraph). Block-level
  * standalone images are handled by the image block renderer; this is the
- * fallback for the mixed case, emitting a bare <img>.
+ * fallback for the mixed case, emitting a bare <img>, or nothing when the url
+ * fails the `urlSchemes` policy.
  */
 function renderInlineImage(node: Image, options: ResolvedOptions): string {
-  const alt = node.alt ?? "";
-  const resolved = options.resolveImage?.(node.url, alt, node.title ?? undefined);
-  const url = resolved?.url ?? node.url;
-  const altText = resolved?.alt ?? alt;
-  const altAttr = ` alt="${escapeAttribute(altText)}"`;
-  const idClass =
-    resolved?.id != null ? ` class="wp-image-${resolved.id}"` : "";
-  return `<img src="${escapeAttribute(url)}"${altAttr}${idClass}/>`;
+  const image = resolveMarkdownImage(node, options);
+  let out = "";
+  if (image != null) {
+    const altAttr = ` alt="${escapeAttribute(image.alt ?? "")}"`;
+    const idClass = image.id != null ? ` class="wp-image-${image.id}"` : "";
+    out = `<img src="${escapeAttribute(image.url)}"${altAttr}${idClass}/>`;
+  }
+  return out;
 }
 
 function renderUnknownInline(

@@ -4,6 +4,8 @@ import type {
   ImageReference,
   Link,
   LinkReference,
+  Node,
+  Parent,
   PhrasingContent,
   Root,
   RootContent,
@@ -32,14 +34,39 @@ import { renderQuote } from "./blocks/quote.js";
 import { renderSeparator } from "./blocks/separator.js";
 import { renderTable } from "./blocks/table.js";
 
-/** Parse Markdown to an mdast tree using the configured plugins. */
+/** Deepest mdast nesting accepted; deeper input would overflow the recursive renderers. */
+export const MAX_NESTING_DEPTH = 200;
+
+/** Parse Markdown to an mdast tree, throwing a RangeError if it nests too deeply. */
 export function parseMarkdown(markdown: string, options: ResolvedOptions): Root {
   const base = unified().use(remarkParse).use(remarkFrontmatter, ["yaml"]);
   const processor = options.gfm ? base.use(remarkGfm) : base;
   const tree = processor.parse(markdown);
   const root = processor.runSync(tree) as Root;
+  const depth = maxDepth(root);
+  if (depth > MAX_NESTING_DEPTH) {
+    throw new RangeError(
+      `Markdown nests ${depth} levels deep; the limit is ${MAX_NESTING_DEPTH}`,
+    );
+  }
   resolveReferences(root);
   return root;
+}
+
+/** Measure the deepest node in the tree, iteratively so deep input can't overflow. */
+function maxDepth(root: Root): number {
+  let deepest = 0;
+  const pending: Array<{ node: Node; depth: number }> = [{ node: root, depth: 0 }];
+  let entry = pending.pop();
+  while (entry != null) {
+    deepest = Math.max(deepest, entry.depth);
+    const children = (entry.node as Parent).children ?? [];
+    for (const child of children) {
+      pending.push({ node: child, depth: entry.depth + 1 });
+    }
+    entry = pending.pop();
+  }
+  return deepest;
 }
 
 /**
@@ -58,26 +85,24 @@ function resolveReferences(tree: Root): void {
 
   visit(tree, "linkReference", (node: LinkReference) => {
     const def = definitions.get(node.identifier);
-    if (def == null) {
-      return;
+    if (def != null) {
+      const link = node as unknown as Link;
+      link.type = "link";
+      link.url = def.url;
+      link.title = def.title ?? null;
     }
-    const link = node as unknown as Link;
-    link.type = "link";
-    link.url = def.url;
-    link.title = def.title ?? null;
   });
 
   visit(tree, "imageReference", (node: ImageReference) => {
     const def = definitions.get(node.identifier);
-    if (def == null) {
-      return;
+    if (def != null) {
+      const alt = node.alt ?? "";
+      const image = node as unknown as Image;
+      image.type = "image";
+      image.url = def.url;
+      image.title = def.title ?? null;
+      image.alt = alt;
     }
-    const alt = node.alt ?? "";
-    const image = node as unknown as Image;
-    image.type = "image";
-    image.url = def.url;
-    image.title = def.title ?? null;
-    image.alt = alt;
   });
 }
 

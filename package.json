@@ -1,6 +1,6 @@
 {
   "name": "@headwall/markdown-to-blocks",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Convert Markdown into serialised WordPress/Gutenberg block markup (core blocks, with <!-- wp:... --> delimiters).",
   "keywords": [
     "markdown",
@@ -56,17 +56,17 @@
   "devDependencies": {
     "@types/mdast": "^4.0.4",
     "@types/node": "^22.20.5",
-    "@wordpress/block-library": "^11.1.0",
-    "@wordpress/blocks": "^16.1.0",
-    "jsdom": "^30.1.2",
+    "@wordpress/block-library": "^12.2.0",
+    "@wordpress/blocks": "^17.2.0",
+    "jsdom": "^31.0.1",
     "remark-frontmatter": "^5.0.0",
     "remark-gfm": "^4.0.0",
     "remark-parse": "^11.0.0",
-    "tsup": "^8.3.5",
+    "tsup": "^9.0.0",
     "typescript": "^5.7.2",
     "unified": "^11.0.5",
-    "unist-util-visit": "^5.0.0",
-    "vitest": "^5.0.3",
+    "unist-util-visit": "^5.2.0",
+    "vitest": "^5.1.1",
     "yaml": "^2.6.1"
   }
 }

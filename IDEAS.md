@@ -25,9 +25,10 @@ detail into an issue or a CHANGELOG entry when something gets built.
 
 ## CLI / UX
 
-- **CLI tests.** Cover arg parsing, stdin/`-`, `-i`/`-o`, and `--frontmatter`.
-  (The CLI surface is currently only manually verified.)
-- **Friendlier errors.** e.g. clearer message when an input file doesn't exist.
+- **More CLI tests.** `test/cli.test.ts` covers piping, exit codes and argument
+  errors; stdin/`-`, `-o` edge cases and `--frontmatter` are still untested.
+- **Friendlier errors.** e.g. clearer message when an input file doesn't exist
+  (currently the raw `ENOENT` message).
 - **`--out-dir` / batch mode.** Convert many files at once.
 
 ## Docs
