@@ -207,6 +207,25 @@ const html = markdownToBlocks(markdown, {
 - An `id` must be a positive integer; anything else throws a `RangeError`.
 - The final URL, whether from the Markdown or the resolver, is subject to the [URL safety](#url-safety) policy.
 
+### Captions and links
+
+An image's Markdown title becomes its caption, unless the resolver supplies a `caption`:
+
+```markdown
+![Floor plan](https://example.com/wp-content/uploads/plan.png "Ground floor, as built")
+```
+
+An image wrapped in a link, alone in its paragraph, becomes a linked `core/image`:
+
+```markdown
+[![Floor plan](https://example.com/wp-content/uploads/plan-1024x768.png)](https://example.com/wp-content/uploads/plan.png)
+```
+
+- When the link points at the image's own file, `linkDestination` is `"media"`: clicking opens the full-size image, which is what lightbox plugins and themes look for. Any size WordPress generated counts as the same file (`-1024x768`, `-scaled`), as does a relative URL with the same path.
+- Any other link is `"custom"`.
+- A link whose URL fails the [URL safety](#url-safety) policy is dropped, and the image renders unlinked.
+- A linked image inside a sentence stays inline in its paragraph, as before.
+
 ---
 
 ## Untrusted Markdown
@@ -250,7 +269,7 @@ By default `headingShift` is `0` and `minHeadingLevel` is `2`, so a body `#` bec
 | Blockquotes | `core/quote` (with inner paragraph blocks) |
 | Thematic breaks `---` `***` `___` | `core/separator` |
 | Tables (GFM) | `core/table` |
-| Images | `core/image` (resolver-driven) |
+| Images, linked images `[![alt](src)](href)` | `core/image` (resolver-driven; title → caption) |
 | Raw HTML in source | `core/html` |
 | **bold**, *italic*, `code`, ~~strike~~, links, hard breaks | inline HTML |
 | GFM task lists | leading `☐` / `☑` glyph (not interactive inputs) |

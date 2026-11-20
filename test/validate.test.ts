@@ -76,6 +76,31 @@ describe("WordPress core block validation", () => {
     expect(collectInvalid(blocks)).toEqual([]);
   });
 
+  it("linked and captioned images match core's serialiser byte-for-byte", () => {
+    const src = "https://ex.com/wp-content/uploads/a-1024x768.png";
+    const full = "https://ex.com/wp-content/uploads/a.png";
+    const cases: Array<[string, Record<string, unknown>]> = [
+      [`[![Alt](${src})](${full})`, { url: src, alt: "Alt", href: full, linkDestination: "media" }],
+      [`[![Alt](${src})](https://ex.com/docs/)`, { url: src, alt: "Alt", href: "https://ex.com/docs/", linkDestination: "custom" }],
+      [`![Alt](${src} "A caption & more")`, { url: src, alt: "Alt", caption: "A caption &amp; more" }],
+      [`[![Alt](${src} "Cap")](${full})`, { url: src, alt: "Alt", href: full, linkDestination: "media", caption: "Cap" }],
+    ];
+    for (const [md, attrs] of cases) {
+      expect(markdownToBlocks(md), md).toBe(serialize([createBlock("core/image", attrs)]));
+    }
+  });
+
+  it("linked library images match core's serialiser byte-for-byte", () => {
+    const full = "https://ex.com/wp-content/uploads/a.png";
+    const markup = markdownToBlocks(`[![Alt](a.png)](${full})`, {
+      resolveImage: () => ({ url: full, id: 42, sizeSlug: "large" }),
+    });
+    const expected = serialize([
+      createBlock("core/image", { url: full, alt: "Alt", id: 42, sizeSlug: "large", href: full, linkDestination: "media" }),
+    ]);
+    expect(markup).toBe(expected);
+  });
+
   it("code blocks match core's serialiser byte-for-byte, shortcode/embed escaping included", () => {
     // Samples avoid `>`: core leaves it raw where we emit `&gt;` (equivalent, both valid).
     const samples = [

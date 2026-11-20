@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-20
+
+### Added
+
+- **Linked images.** A paragraph holding only a linked image
+  (`[![alt](src)](href)`) becomes a `core/image` with the link, instead of a
+  paragraph with an inline `<img>`. `linkDestination` is `"media"` when the
+  link is the image's own file (including WordPress's `-WxH` and `-scaled`
+  sizes), so lightboxes work, and `"custom"` otherwise. Link URLs follow the
+  `urlSchemes` policy: an unsafe link is dropped and the image renders
+  unlinked.
+- **Captions from image titles.** `![alt](src "Caption")` renders a
+  `<figcaption>`. A `caption` from `resolveImage` still takes precedence.
+  Previously the title of an external image was silently dropped.
+
+Both shapes are checked byte-for-byte against `@wordpress/blocks`' own
+serialiser.
+
 ## [1.4.0] - 2026-11-20
 
 ### Security
@@ -152,7 +170,8 @@ parser and confirmed to import into the block editor with no recovery prompts.
 - ESM-only. Requires Node ≥ 18.
 - Zero runtime dependencies — all bundled into the published package.
 
-[Unreleased]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/headwalluk/markdown-to-blocks/compare/v1.1.1...v1.2.0
