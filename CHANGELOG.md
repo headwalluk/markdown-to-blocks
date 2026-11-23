@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+No change to the converter's output or the CLI's behaviour.
+
+### Changed
+
+- **Documentation moved into `docs/`**, one page per audience: the CLI, posting
+  to WordPress, supported Markdown, untrusted Markdown, the library API, images,
+  development, and a block-markup reference describing the exact shape each
+  renderer emits. The README is now an introduction and an index.
+- The package's `author` field no longer carries an email address.
+
+### Development
+
+- ESLint, with the house rules (no `return` inside a loop, no swallowed
+  errors, no `process.env`, no single-letter names), runs in `npm run check`
+  and in CI. The rules live in `tools/eslint-plugin-house/` with their own tests.
+- The CLI's exit codes are named constants (`0`, `1`, and `141` for a closed
+  pipe, as before) and are documented in `docs/cli.md`.
+
 ## [1.5.0] - 2026-11-20
 
 ### Added

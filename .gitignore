@@ -1,3 +1,7 @@
+# Working notes and code-analysis reports stay out of a github.com repo.
+dev-notes/
+code-analysis/
+
 node_modules/
 dist/
 *.log
