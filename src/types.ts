@@ -81,12 +81,7 @@ export interface ParsedDocument {
   blocks: string;
 }
 
-/**
- * Threaded through every block renderer. Carries resolved options plus the
- * recursion hooks a renderer needs: inline rendering, and dispatching child
- * block nodes (used by quote, list, etc.). Defined as a type here; the concrete
- * implementation is built in convert.ts.
- */
+/** Resolved options plus the recursion hooks block renderers need; built in convert.ts. */
 export interface RenderContext {
   options: ResolvedOptions;
   /** Per-document heading slugger (unique anchor ids). See `headingAnchors`. */
@@ -99,6 +94,13 @@ export interface RenderContext {
   renderBlocks(nodes: RootContent[]): string[];
 }
 
+/** Highest heading level HTML has (`h6`). */
+export const MAX_HEADING_LEVEL = 6;
+/** Lowest level `minHeadingLevel` may be set to (`h1`). */
+const MIN_HEADING_LEVEL = 1;
+/** Default `minHeadingLevel`: body content never emits an `h1`. */
+const DEFAULT_MIN_HEADING_LEVEL = 2;
+
 const CODE_LANGUAGE_MODES: readonly string[] = ["drop", "class"];
 const UNSUPPORTED_MODES: readonly string[] = ["html", "skip"];
 const URL_SCHEME_MODES: readonly string[] = ["safe", "any"];
@@ -107,7 +109,7 @@ const URL_SCHEME_MODES: readonly string[] = ["safe", "any"];
 export function applyOptionDefaults(options?: ConvertOptions): ResolvedOptions {
   return {
     headingShift: options?.headingShift ?? 0,
-    minHeadingLevel: options?.minHeadingLevel ?? 2,
+    minHeadingLevel: options?.minHeadingLevel ?? DEFAULT_MIN_HEADING_LEVEL,
     headingAnchors: options?.headingAnchors ?? false,
     resolveImage: options?.resolveImage,
     codeLanguage: options?.codeLanguage ?? "drop",
@@ -134,8 +136,10 @@ export function validateOptions(options: ResolvedOptions): string[] {
     problems.push(`headingShift must be an integer (got ${String(options.headingShift)})`);
   }
   const minLevel = options.minHeadingLevel;
-  if (!Number.isInteger(minLevel) || minLevel < 1 || minLevel > 6) {
-    problems.push(`minHeadingLevel must be an integer from 1 to 6 (got ${String(minLevel)})`);
+  if (!Number.isInteger(minLevel) || minLevel < MIN_HEADING_LEVEL || minLevel > MAX_HEADING_LEVEL) {
+    problems.push(
+      `minHeadingLevel must be an integer from ${MIN_HEADING_LEVEL} to ${MAX_HEADING_LEVEL} (got ${String(minLevel)})`,
+    );
   }
   if (!CODE_LANGUAGE_MODES.includes(options.codeLanguage)) {
     problems.push(`codeLanguage must be 'drop' or 'class' (got ${JSON.stringify(options.codeLanguage)})`);

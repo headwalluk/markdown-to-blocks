@@ -27,17 +27,17 @@ describe("slugify", () => {
 
 describe("createHeadingSlugger", () => {
   it("appends -1, -2, … to duplicate slugs", () => {
-    const s = createHeadingSlugger();
-    expect(s.slug("Overview")).toBe("overview");
-    expect(s.slug("Overview")).toBe("overview-1");
-    expect(s.slug("Overview")).toBe("overview-2");
-    expect(s.slug("Other")).toBe("other");
+    const slugger = createHeadingSlugger();
+    expect(slugger.slug("Overview")).toBe("overview");
+    expect(slugger.slug("Overview")).toBe("overview-1");
+    expect(slugger.slug("Overview")).toBe("overview-2");
+    expect(slugger.slug("Other")).toBe("other");
   });
 
   it("never de-duplicates empty slugs (each stays empty)", () => {
-    const s = createHeadingSlugger();
-    expect(s.slug("🎉")).toBe("");
-    expect(s.slug("🎉")).toBe("");
+    const slugger = createHeadingSlugger();
+    expect(slugger.slug("🎉")).toBe("");
+    expect(slugger.slug("🎉")).toBe("");
   });
 });
 

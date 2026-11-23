@@ -14,40 +14,23 @@ interface ImageLink {
   destination: LinkDestination;
 }
 
-/**
- * Image → core/image, driven by the injectable `resolveImage` option.
- *
- *  - When the resolver returns an attachment `id`, we emit the "library" shape:
- *    a `wp:image` comment carrying id (+ sizeSlug + linkDestination), a
- *    `size-<slug>` figure class, and a `wp-image-<id>` class on the <img>.
- *  - Otherwise we emit the "external" fallback: a bare figure/img with no id.
- *  - An image whose url fails the `urlSchemes` policy is dropped (null).
- *
- * A linked image (`[![alt](src)](href)`) wraps the <img> in `<a href>`, with
- * `linkDestination` "media" when the href is the image's own file (any size
- * WordPress made of it) and "custom" otherwise. A link whose href fails the
- * `urlSchemes` policy is dropped and the image renders unlinked.
- *
- * The caption is the resolver's `caption`, else the Markdown image title
- * (`![alt](src "Caption")`), rendered as `<figcaption class="wp-element-caption">`
- * (current core shape; version-sensitive — the harness polices it).
- */
+/** Image → core/image, library or external shape, linked and captioned per docs/block-markup.md#image. */
 export function renderImage(
   node: Image,
-  ctx: RenderContext,
+  context: RenderContext,
   link?: Link,
 ): string | null {
-  const image = resolveMarkdownImage(node, ctx.options);
-  let out: string | null = null;
+  const image = resolveMarkdownImage(node, context.options);
+  let markup: string | null = null;
   if (image != null) {
     const caption = image.caption ?? node.title ?? undefined;
-    const imageLink = link != null ? resolveImageLink(link, image.url, ctx) : null;
-    out =
+    const imageLink = link != null ? resolveImageLink(link, image.url, context) : null;
+    markup =
       image.id != null
         ? renderLibraryImage(image, image.id, caption, imageLink)
         : renderExternalImage(image, caption, imageLink);
   }
-  return out;
+  return markup;
 }
 
 function renderLibraryImage(
@@ -58,24 +41,24 @@ function renderLibraryImage(
 ): string {
   const sizeSlug = image.sizeSlug;
 
-  const attrs: Record<string, unknown> = { id };
+  const attributes: Record<string, unknown> = { id };
   if (sizeSlug != null) {
-    attrs.sizeSlug = sizeSlug;
+    attributes.sizeSlug = sizeSlug;
   }
-  attrs.linkDestination = link?.destination ?? "none";
+  attributes.linkDestination = link?.destination ?? "none";
 
   const figureClass =
     sizeSlug != null
       ? `wp-block-image size-${escapeAttribute(sizeSlug)}`
       : "wp-block-image";
 
-  const img =
+  const imageTag =
     `<img src="${escapeAttribute(image.url)}"` +
     ` alt="${escapeAttribute(image.alt ?? "")}"` +
     ` class="wp-image-${id}"/>`;
 
-  const inner = `<figure class="${figureClass}">${wrapInLink(img, link)}${renderCaption(caption)}</figure>`;
-  return `<!-- wp:image${serializeBlockAttributes(attrs)} -->\n${inner}\n<!-- /wp:image -->`;
+  const inner = `<figure class="${figureClass}">${wrapInLink(imageTag, link)}${renderCaption(caption)}</figure>`;
+  return `<!-- wp:image${serializeBlockAttributes(attributes)} -->\n${inner}\n<!-- /wp:image -->`;
 }
 
 function renderExternalImage(
@@ -83,22 +66,22 @@ function renderExternalImage(
   caption: string | undefined,
   link: ImageLink | null,
 ): string {
-  const img = `<img src="${escapeAttribute(image.url)}" alt="${escapeAttribute(image.alt ?? "")}"/>`;
-  const attrs: Record<string, unknown> = {};
+  const imageTag = `<img src="${escapeAttribute(image.url)}" alt="${escapeAttribute(image.alt ?? "")}"/>`;
+  const attributes: Record<string, unknown> = {};
   if (link != null) {
-    attrs.linkDestination = link.destination;
+    attributes.linkDestination = link.destination;
   }
-  const inner = `<figure class="wp-block-image">${wrapInLink(img, link)}${renderCaption(caption)}</figure>`;
-  return `<!-- wp:image${serializeBlockAttributes(attrs)} -->\n${inner}\n<!-- /wp:image -->`;
+  const inner = `<figure class="wp-block-image">${wrapInLink(imageTag, link)}${renderCaption(caption)}</figure>`;
+  return `<!-- wp:image${serializeBlockAttributes(attributes)} -->\n${inner}\n<!-- /wp:image -->`;
 }
 
 /** The image's link, or null when its href fails the `urlSchemes` policy. */
 function resolveImageLink(
   link: Link,
   imageUrl: string,
-  ctx: RenderContext,
+  context: RenderContext,
 ): ImageLink | null {
-  const allowed = ctx.options.urlSchemes === "any" || isSafeLinkUrl(link.url);
+  const allowed = context.options.urlSchemes === "any" || isSafeLinkUrl(link.url);
   let imageLink: ImageLink | null = null;
   if (allowed) {
     imageLink = {
@@ -109,15 +92,11 @@ function resolveImageLink(
   return imageLink;
 }
 
-function wrapInLink(img: string, link: ImageLink | null): string {
-  return link != null ? `<a href="${escapeAttribute(link.href)}">${img}</a>` : img;
+function wrapInLink(imageTag: string, link: ImageLink | null): string {
+  return link != null ? `<a href="${escapeAttribute(link.href)}">${imageTag}</a>` : imageTag;
 }
 
-/**
- * Whether `href` is the same upload as `src`: the same path once the query,
- * fragment and WordPress's generated-size suffixes (`-1024x768`, `-scaled`)
- * are removed. A relative URL is compared by path alone.
- */
+/** Whether `href` is the same upload as `src`, ignoring query, fragment and WordPress size suffixes. */
 export function isSameMediaFile(href: string, src: string): boolean {
   const hrefFile = mediaFileKey(href);
   const srcFile = mediaFileKey(src);

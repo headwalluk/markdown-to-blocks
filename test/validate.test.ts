@@ -12,8 +12,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const fixturesDir = join(here, "fixtures");
 
 const fixtures = readdirSync(fixturesDir)
-  .filter((f) => f.endsWith(".md"))
-  .map((f) => f.replace(/\.md$/, ""))
+  .filter((fileName) => fileName.endsWith(".md"))
+  .map((fileName) => fileName.replace(/\.md$/, ""))
   .sort();
 
 interface ParsedBlock {
@@ -44,8 +44,8 @@ describe("WordPress core block validation", () => {
 
   for (const name of fixtures) {
     it(`${name} parses with zero validation errors`, () => {
-      const md = readFileSync(join(fixturesDir, `${name}.md`), "utf8");
-      const markup = markdownToBlocks(md);
+      const markdown = readFileSync(join(fixturesDir, `${name}.md`), "utf8");
+      const markup = markdownToBlocks(markdown);
       const blocks = parse(markup) as ParsedBlock[];
       expect(collectInvalid(blocks)).toEqual([]);
     });
@@ -54,15 +54,15 @@ describe("WordPress core block validation", () => {
   it("headingAnchors output validates against core's parser", () => {
     // Not covered by the fixture loop, which only runs default options. Include
     // a `--`/`&` slug and a duplicate so the anchor escaping is exercised.
-    const md = "## My fancy something & something\n\n## Overview\n\n## Overview";
-    const markup = markdownToBlocks(md, { headingAnchors: true });
+    const markdown = "## My fancy something & something\n\n## Overview\n\n## Overview";
+    const markup = markdownToBlocks(markdown, { headingAnchors: true });
     const blocks = parse(markup) as ParsedBlock[];
     expect(collectInvalid(blocks)).toEqual([]);
   });
 
   it("non-default heading levels and library images validate", () => {
-    const md = "# Top\n\n## Second\n\n![Alt](x.png)";
-    const markup = markdownToBlocks(md, {
+    const markdown = "# Top\n\n## Second\n\n![Alt](x.png)";
+    const markup = markdownToBlocks(markdown, {
       headingShift: -1,
       minHeadingLevel: 1,
       resolveImage: () => ({
@@ -85,8 +85,8 @@ describe("WordPress core block validation", () => {
       [`![Alt](${src} "A caption & more")`, { url: src, alt: "Alt", caption: "A caption &amp; more" }],
       [`[![Alt](${src} "Cap")](${full})`, { url: src, alt: "Alt", href: full, linkDestination: "media", caption: "Cap" }],
     ];
-    for (const [md, attrs] of cases) {
-      expect(markdownToBlocks(md), md).toBe(serialize([createBlock("core/image", attrs)]));
+    for (const [markdown, attributes] of cases) {
+      expect(markdownToBlocks(markdown), markdown).toBe(serialize([createBlock("core/image", attributes)]));
     }
   });
 

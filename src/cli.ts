@@ -8,6 +8,16 @@ import {
   validateOptions,
 } from "./types.js";
 
+/** Process exit codes, listed in docs/cli.md. */
+const ExitCode = {
+  success: 0,
+  failure: 1,
+  /** What a shell reports for a process killed by SIGPIPE (128 + 13). */
+  brokenPipe: 141,
+} as const;
+
+type ExitCodeValue = (typeof ExitCode)[keyof typeof ExitCode];
+
 const HELP = `md2blocks — convert Markdown to WordPress/Gutenberg block markup
 
 Usage:
@@ -159,23 +169,23 @@ function readInput(input: string | undefined): string {
   return readFileSync(source, "utf8");
 }
 
-function run(argv: string[]): number {
+function run(argv: string[]): ExitCodeValue {
   const args = parseArgs(argv);
 
   if (args.help) {
     process.stdout.write(HELP);
-    return 0;
+    return ExitCode.success;
   }
   if (args.version) {
     process.stdout.write(`${VERSION}\n`);
-    return 0;
+    return ExitCode.success;
   }
   if (args.errors.length > 0) {
     for (const error of args.errors) {
       process.stderr.write(`md2blocks: ${error}\n`);
     }
     process.stderr.write("Run md2blocks --help for usage.\n");
-    return 1;
+    return ExitCode.failure;
   }
 
   // Reading stdin with nothing piped in would hang forever on a TTY — fail fast
@@ -186,7 +196,7 @@ function run(argv: string[]): number {
       "md2blocks: no input provided. Pass -i <file>, give a filename, or pipe Markdown via stdin.\n\n",
     );
     process.stderr.write(HELP);
-    return 1;
+    return ExitCode.failure;
   }
 
   const markdown = readInput(args.input);
@@ -199,14 +209,11 @@ function run(argv: string[]): number {
   } else {
     process.stdout.write(result);
   }
-  return 0;
+  return ExitCode.success;
 }
 
 // Replaced at build time by tsup `define`; falls back for ts-node/dev runs.
 declare const VERSION: string;
-
-// Exit code a shell reports for a process killed by SIGPIPE (128 + 13).
-const EXIT_BROKEN_PIPE = 141;
 
 /** Writes a CLI error message to stderr. */
 function reportError(error: unknown): void {
@@ -215,12 +222,13 @@ function reportError(error: unknown): void {
 }
 
 // Node ignores SIGPIPE, so a reader closing early (`| head`) surfaces as EPIPE.
+// stdout is broken here, so exiting at once can't lose output.
 process.stdout.on("error", (error: NodeJS.ErrnoException) => {
   if (error.code === "EPIPE") {
-    process.exit(EXIT_BROKEN_PIPE);
+    process.exit(ExitCode.brokenPipe);
   } else {
     reportError(error);
-    process.exit(1);
+    process.exit(ExitCode.failure);
   }
 });
 
@@ -230,5 +238,5 @@ try {
   process.exitCode = run(process.argv.slice(2));
 } catch (error) {
   reportError(error);
-  process.exitCode = 1;
+  process.exitCode = ExitCode.failure;
 }

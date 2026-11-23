@@ -2,12 +2,7 @@ import type { Image } from "mdast";
 import type { ResolvedImage, ResolvedOptions } from "./types.js";
 import { isSafeImageUrl } from "./url.js";
 
-/**
- * Run the `resolveImage` callback for an mdast image and merge the result with
- * the Markdown's own url/alt. Returns null when the final url fails the
- * `urlSchemes` policy, so the caller drops the image. Throws a RangeError when
- * the resolver returns an `id` that isn't a positive safe integer.
- */
+/** Run `resolveImage` and merge with the Markdown's url and alt; null when the URL fails the policy. */
 export function resolveMarkdownImage(
   node: Image,
   options: ResolvedOptions,

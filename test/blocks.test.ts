@@ -14,19 +14,19 @@ const fixturesDir = join(here, "fixtures");
  * trimmed, since editors tend to add one to the .html file).
  */
 const fixtures = readdirSync(fixturesDir)
-  .filter((f) => f.endsWith(".md"))
-  .map((f) => f.replace(/\.md$/, ""))
+  .filter((fileName) => fileName.endsWith(".md"))
+  .map((fileName) => fileName.replace(/\.md$/, ""))
   .sort();
 
 describe("golden fixtures", () => {
   for (const name of fixtures) {
     it(name, () => {
-      const md = readFileSync(join(fixturesDir, `${name}.md`), "utf8");
+      const markdown = readFileSync(join(fixturesDir, `${name}.md`), "utf8");
       const expected = readFileSync(
         join(fixturesDir, `${name}.expected.html`),
         "utf8",
       ).replace(/\n$/, "");
-      expect(markdownToBlocks(md)).toBe(expected);
+      expect(markdownToBlocks(markdown)).toBe(expected);
     });
   }
 });

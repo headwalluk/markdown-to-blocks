@@ -2,54 +2,42 @@ import type { List, ListItem } from "mdast";
 import { serializeBlockAttributes } from "../attributes.js";
 import type { RenderContext } from "../types.js";
 
-/**
- * List → core/list containing core/list-item children (WP 6.0+).
- *
- * Whitespace is exact and load-bearing (matches WordPress's serializer):
- *  - the first `<!-- wp:list-item -->` sits on the SAME line as the opening
- *    `<ul|ol class="wp-block-list">`;
- *  - list items are separated by one blank line;
- *  - the final `<!-- /wp:list-item -->` attaches directly to `</ul|ol>`.
- *
- * A nested list lives INSIDE its parent `<li>`, immediately after the item text
- * and before `</li>`. An ordered list not starting at 1 carries `start` in both
- * the attributes and on the `<ol>`, ahead of `class` as core serialises it.
- */
-export function renderList(node: List, ctx: RenderContext): string {
+/** List → core/list of core/list-item blocks; whitespace per docs/block-markup.md#list. */
+export function renderList(node: List, context: RenderContext): string {
   const tag = node.ordered ? "ol" : "ul";
   const attributes: Record<string, unknown> = {};
-  let startAttr = "";
+  let startAttribute = "";
   if (node.ordered) {
     attributes.ordered = true;
     if (node.start != null && node.start !== 1) {
       attributes.start = node.start;
-      startAttr = ` start="${node.start}"`;
+      startAttribute = ` start="${node.start}"`;
     }
   }
-  const attrs = serializeBlockAttributes(attributes);
+  const serialisedAttributes = serializeBlockAttributes(attributes);
 
   const items: string[] = [];
   for (const child of node.children) {
-    items.push(renderListItem(child, ctx));
+    items.push(renderListItem(child, context));
   }
 
-  const inner = `<${tag}${startAttr} class="wp-block-list">${items.join("\n\n")}</${tag}>`;
-  return `<!-- wp:list${attrs} -->\n${inner}\n<!-- /wp:list -->`;
+  const inner = `<${tag}${startAttribute} class="wp-block-list">${items.join("\n\n")}</${tag}>`;
+  return `<!-- wp:list${serialisedAttributes} -->\n${inner}\n<!-- /wp:list -->`;
 }
 
-function renderListItem(node: ListItem, ctx: RenderContext): string {
+function renderListItem(node: ListItem, context: RenderContext): string {
   const textParts: string[] = [];
   const nestedParts: string[] = [];
 
   for (const child of node.children) {
     if (child.type === "list") {
-      nestedParts.push(renderList(child, ctx));
+      nestedParts.push(renderList(child, context));
     } else if (child.type === "paragraph") {
-      textParts.push(ctx.renderInline(child.children));
+      textParts.push(context.renderInline(child.children));
     } else {
       // Loose item content we don't render inline (rare): dispatch as a block
       // and keep it, so nothing is silently dropped.
-      const block = ctx.renderBlock(child);
+      const block = context.renderBlock(child);
       if (block != null) {
         nestedParts.push(block);
       }
@@ -62,6 +50,6 @@ function renderListItem(node: ListItem, ctx: RenderContext): string {
 
   const text = checkbox + textParts.join("<br>");
   const nested = nestedParts.join("");
-  const li = `<li>${text}${nested}</li>`;
-  return `<!-- wp:list-item -->\n${li}\n<!-- /wp:list-item -->`;
+  const itemMarkup = `<li>${text}${nested}</li>`;
+  return `<!-- wp:list-item -->\n${itemMarkup}\n<!-- /wp:list-item -->`;
 }

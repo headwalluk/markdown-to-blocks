@@ -1,22 +1,8 @@
-/**
- * Heading-anchor slugs (GitHub-style).
- *
- * `slugify` lowercases, drops anything that isn't a letter, number, underscore,
- * space or hyphen, then turns spaces into hyphens. Runs of spaces/hyphens are
- * NOT collapsed, so `Foo & Bar` → `foo--bar` (the `&` is removed and the two
- * surrounding spaces each become a hyphen) — matching GitHub's rendering.
- *
- * `createHeadingSlugger` layers GitHub's de-duplication on top: a repeated slug
- * gets a `-1`, `-2`, … suffix so every heading in one document is unique and
- * page anchors never collide.
- */
+/** GitHub-style heading-anchor slugs (docs/block-markup.md#heading). */
 
+/** Hands out unique slugs within one document. */
 export interface HeadingSlugger {
-  /**
-   * Return a unique, GitHub-style slug for `text`. Returns "" when `text` slugs
-   * to nothing (e.g. it was only punctuation/emoji) so the caller can omit the
-   * anchor entirely rather than emit an empty `id`.
-   */
+  /** A unique slug for `text`, or "" when it slugs to nothing (the caller then omits the anchor). */
   slug(text: string): string;
 }
 

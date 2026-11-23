@@ -1,10 +1,4 @@
-/**
- * URL scheme policy for link `href` and image `src` values.
- *
- * Under `urlSchemes: 'safe'` a URL passes when it is relative (no scheme) or
- * its scheme is on the allowlist; anything else (`javascript:`, `data:`, …)
- * is refused. See "URL safety" in README.md.
- */
+/** URL scheme policy for link `href` and image `src` values (docs/security.md#url-safety). */
 
 const LINK_SCHEMES: readonly string[] = ["http", "https", "mailto", "tel"];
 const IMAGE_SCHEMES: readonly string[] = ["http", "https"];
@@ -15,6 +9,7 @@ export function urlScheme(url: string): string | null {
   // `java\tscript:` and ` javascript:` both resolve to the javascript scheme.
   const normalised = url
     .replace(/[\t\n\r]/g, "")
+    // eslint-disable-next-line no-control-regex -- trimming C0 control characters is the point
     .replace(/^[\u0000- ]+|[\u0000- ]+$/g, "");
   const match = /^([a-z][a-z0-9+.-]*):/i.exec(normalised);
   return match?.[1] != null ? match[1].toLowerCase() : null;

@@ -58,12 +58,12 @@ describe("heading anchors", () => {
   });
 
   it("de-duplicates repeated slugs per document", () => {
-    const out = markdownToBlocks("## Overview\n\n## Overview\n\n## Overview", {
+    const markup = markdownToBlocks("## Overview\n\n## Overview\n\n## Overview", {
       headingAnchors: true,
     });
-    expect(out).toContain('id="overview"');
-    expect(out).toContain('id="overview-1"');
-    expect(out).toContain('id="overview-2"');
+    expect(markup).toContain('id="overview"');
+    expect(markup).toContain('id="overview-1"');
+    expect(markup).toContain('id="overview-2"');
   });
 
   it("omits the id when the heading slugs to nothing", () => {
@@ -84,8 +84,8 @@ describe("images", () => {
       // src is ignored in this stub
       ...(src ? {} : {}),
     });
-    const out = markdownToBlocks("![Alt text](x.png)", { resolveImage });
-    expect(out).toBe(
+    const markup = markdownToBlocks("![Alt text](x.png)", { resolveImage });
+    expect(markup).toBe(
       '<!-- wp:image {"id":123,"sizeSlug":"large","linkDestination":"none"} -->\n' +
         '<figure class="wp-block-image size-large"><img src="https://site/wp-content/uploads/x.png" alt="Alt text" class="wp-image-123"/></figure>\n' +
         "<!-- /wp:image -->",
@@ -93,10 +93,10 @@ describe("images", () => {
   });
 
   it("escapes a resolver-supplied sizeSlug in the attributes and class", () => {
-    const out = markdownToBlocks("![Alt](x.png)", {
+    const markup = markdownToBlocks("![Alt](x.png)", {
       resolveImage: () => ({ url: "x.png", id: 7, sizeSlug: 'x-->"y' }),
     });
-    expect(out).toBe(
+    expect(markup).toBe(
       '<!-- wp:image {"id":7,"sizeSlug":"x\\u002d\\u002d\\u003e\\"y","linkDestination":"none"} -->\n' +
         '<figure class="wp-block-image size-x--&gt;&quot;y"><img src="x.png" alt="Alt" class="wp-image-7"/></figure>\n' +
         "<!-- /wp:image -->",
@@ -104,20 +104,20 @@ describe("images", () => {
   });
 
   it("falls back to the external shape when the resolver returns undefined", () => {
-    const out = markdownToBlocks("![Alt](https://ext/x.png)", {
+    const markup = markdownToBlocks("![Alt](https://ext/x.png)", {
       resolveImage: () => undefined,
     });
-    expect(out).toContain('<figure class="wp-block-image"><img');
-    expect(out).not.toContain("wp-image-");
+    expect(markup).toContain('<figure class="wp-block-image"><img');
+    expect(markup).not.toContain("wp-image-");
   });
 });
 
 describe("task lists", () => {
   it("renders a leading glyph and no interactive input", () => {
-    const out = markdownToBlocks("- [x] done\n- [ ] todo");
-    expect(out).toContain("<li>☑ done</li>");
-    expect(out).toContain("<li>☐ todo</li>");
-    expect(out).not.toContain("<input");
+    const markup = markdownToBlocks("- [x] done\n- [ ] todo");
+    expect(markup).toContain("<li>☑ done</li>");
+    expect(markup).toContain("<li>☐ todo</li>");
+    expect(markup).not.toContain("<input");
   });
 });
 
@@ -131,8 +131,8 @@ describe("hard line break", () => {
 
 describe("parseMarkdownDocument", () => {
   it("peels YAML frontmatter and converts only the body", () => {
-    const md = "---\ntitle: Hello\ndate: 2026-01-01\n---\n\n# Body\n";
-    const doc = parseMarkdownDocument(md);
+    const markdown = "---\ntitle: Hello\ndate: 2026-01-01\n---\n\n# Body\n";
+    const doc = parseMarkdownDocument(markdown);
     expect(doc.frontmatter.title).toBe("Hello");
     expect(doc.blocks).toContain('<h2 class="wp-block-heading">Body</h2>');
     expect(doc.blocks).not.toContain("title");
@@ -153,10 +153,10 @@ describe("markdownToBlockList", () => {
 
 describe("code language class", () => {
   it("escapes the fence language inside the class attribute", () => {
-    const out = markdownToBlocks('```js"onmouseover="x\ncode\n```', {
+    const markup = markdownToBlocks('```js"onmouseover="x\ncode\n```', {
       codeLanguage: "class",
     });
-    expect(out).toContain('<code class="language-js&quot;onmouseover=&quot;x">');
+    expect(markup).toContain('<code class="language-js&quot;onmouseover=&quot;x">');
   });
 });
 
@@ -180,8 +180,8 @@ describe("option validation", () => {
   });
 
   it("accepts a negative shift with minHeadingLevel 1", () => {
-    const out = markdownToBlocks("## Title", { headingShift: -1, minHeadingLevel: 1 });
-    expect(out).toContain('<h1 class="wp-block-heading">Title</h1>');
+    const markup = markdownToBlocks("## Title", { headingShift: -1, minHeadingLevel: 1 });
+    expect(markup).toContain('<h1 class="wp-block-heading">Title</h1>');
   });
 
   it("validates parseMarkdownDocument options too", () => {
@@ -193,10 +193,10 @@ describe("option validation", () => {
 
 describe("raw HTML in skip mode", () => {
   it("drops inline HTML as well as block HTML", () => {
-    const out = markdownToBlocks("a <b>bold</b> <!-- wp:separator /--> z\n\n<div>block</div>", {
+    const markup = markdownToBlocks("a <b>bold</b> <!-- wp:separator /--> z\n\n<div>block</div>", {
       unsupported: "skip",
     });
-    expect(out).toBe("<!-- wp:paragraph -->\n<p>a bold  z</p>\n<!-- /wp:paragraph -->");
+    expect(markup).toBe("<!-- wp:paragraph -->\n<p>a bold  z</p>\n<!-- /wp:paragraph -->");
   });
 
   it("keeps inline HTML by default", () => {
@@ -206,17 +206,17 @@ describe("raw HTML in skip mode", () => {
 
 describe("URL scheme policy", () => {
   it("keeps the text but drops the href of unsafe links", () => {
-    const md =
+    const markdown =
       "[direct](javascript:alert(1)) [entity](javascript&#58;alert(2)) [ref][evil] [ok](https://x.test)\n\n" +
       "[evil]: JAVASCRIPT:alert(3)";
-    expect(markdownToBlocks(md)).toBe(
+    expect(markdownToBlocks(markdown)).toBe(
       '<!-- wp:paragraph -->\n<p>direct entity ref <a href="https://x.test">ok</a></p>\n<!-- /wp:paragraph -->',
     );
   });
 
   it("keeps mailto, tel, relative and fragment links", () => {
-    const out = markdownToBlocks("[a](mailto:a@x.test) [b](tel:+44) [c](/about) [d](#top)");
-    expect(out).toContain('<a href="mailto:a@x.test">a</a> <a href="tel:+44">b</a> <a href="/about">c</a> <a href="#top">d</a>');
+    const markup = markdownToBlocks("[a](mailto:a@x.test) [b](tel:+44) [c](/about) [d](#top)");
+    expect(markup).toContain('<a href="mailto:a@x.test">a</a> <a href="tel:+44">b</a> <a href="/about">c</a> <a href="#top">d</a>');
   });
 
   it("drops images with unsafe sources, block and inline", () => {
@@ -226,17 +226,17 @@ describe("URL scheme policy", () => {
   });
 
   it("applies the image policy to resolver-supplied URLs", () => {
-    const out = markdownToBlocks("![x](a.png)", {
+    const markup = markdownToBlocks("![x](a.png)", {
       resolveImage: () => ({ url: "javascript:alert(1)", id: 3 }),
     });
-    expect(out).toBe("");
+    expect(markup).toBe("");
   });
 
   it("passes any scheme with urlSchemes 'any'", () => {
-    const out = markdownToBlocks("[x](javascript:void(0)) ![i](data:image/png;base64,AA)", {
+    const markup = markdownToBlocks("[x](javascript:void(0)) ![i](data:image/png;base64,AA)", {
       urlSchemes: "any",
     });
-    expect(out).toContain('<a href="javascript:void(0)">x</a> <img src="data:image/png;base64,AA" alt="i"/>');
+    expect(markup).toContain('<a href="javascript:void(0)">x</a> <img src="data:image/png;base64,AA" alt="i"/>');
   });
 });
 

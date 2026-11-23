@@ -1,7 +1,4 @@
-/**
- * Escaping helpers. Text and code escape `& < >` once, from the raw mdast
- * `value`; attributes also escape `"`. See "Escaping discipline" in CLAUDE.md.
- */
+/** Escaping helpers; each value is escaped once, from its raw mdast `value` (docs/block-markup.md#escaping). */
 
 /** Escape `&`, `<`, `>` in visible text content. `&` must be replaced first. */
 export function escapeText(value: string): string {
@@ -18,11 +15,7 @@ export function escapeCode(value: string): string {
   return escaped;
 }
 
-/**
- * Escape a value destined for a double-quoted HTML attribute.
- * We escape `&` and `"` here so attribute values stay well-formed; `<`/`>`
- * inside attributes are harmless but we escape them too for tidiness.
- */
+/** Escape `&`, `"`, `<`, `>` for a double-quoted HTML attribute value. */
 export function escapeAttribute(value: string): string {
   const escaped = value
     .replace(/&/g, "&amp;")

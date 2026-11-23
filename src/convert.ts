@@ -69,14 +69,7 @@ function maxDepth(root: Root): number {
   return deepest;
 }
 
-/**
- * Resolve reference-style links/images (`[text][ref]`, `![alt][ref]`) against
- * their `[ref]: url` definitions, rewriting them into plain `link`/`image` nodes
- * in place. This keeps every block/inline renderer simple — they only ever see
- * resolved nodes — and lets the paragraph-only-image → core/image detection work
- * for reference images too. Unresolved references (no matching definition) are
- * left as-is and fall through to best-effort text rendering.
- */
+/** Rewrite reference-style links and images into plain ones in place, from their definitions. */
 function resolveReferences(tree: Root): void {
   const definitions = new Map<string, Definition>();
   visit(tree, "definition", (node: Definition) => {
@@ -84,23 +77,23 @@ function resolveReferences(tree: Root): void {
   });
 
   visit(tree, "linkReference", (node: LinkReference) => {
-    const def = definitions.get(node.identifier);
-    if (def != null) {
+    const definition = definitions.get(node.identifier);
+    if (definition != null) {
       const link = node as unknown as Link;
       link.type = "link";
-      link.url = def.url;
-      link.title = def.title ?? null;
+      link.url = definition.url;
+      link.title = definition.title ?? null;
     }
   });
 
   visit(tree, "imageReference", (node: ImageReference) => {
-    const def = definitions.get(node.identifier);
-    if (def != null) {
+    const definition = definitions.get(node.identifier);
+    if (definition != null) {
       const alt = node.alt ?? "";
       const image = node as unknown as Image;
       image.type = "image";
-      image.url = def.url;
-      image.title = def.title ?? null;
+      image.url = definition.url;
+      image.title = definition.title ?? null;
       image.alt = alt;
     }
   });
@@ -118,79 +111,79 @@ export function createContext(options: ResolvedOptions): RenderContext {
       return dispatch(node, context);
     },
     renderBlocks(nodes: RootContent[]): string[] {
-      const out: string[] = [];
+      const blocks: string[] = [];
       for (const node of nodes) {
         const rendered = dispatch(node, context);
         if (rendered != null) {
-          out.push(rendered);
+          blocks.push(rendered);
         }
       }
-      return out;
+      return blocks;
     },
   };
   return context;
 }
 
 /** Map a single block-level mdast node to its block markup (or null to drop). */
-function dispatch(node: RootContent, ctx: RenderContext): string | null {
-  let out: string | null = null;
+function dispatch(node: RootContent, context: RenderContext): string | null {
+  let markup: string | null;
   switch (node.type) {
     case "paragraph":
-      out = renderParagraph(node, ctx);
+      markup = renderParagraph(node, context);
       break;
     case "heading":
-      out = renderHeading(node, ctx);
+      markup = renderHeading(node, context);
       break;
     case "code":
-      out = renderCode(node, ctx);
+      markup = renderCode(node, context);
       break;
     case "list":
-      out = renderList(node, ctx);
+      markup = renderList(node, context);
       break;
     case "blockquote":
-      out = renderQuote(node, ctx);
+      markup = renderQuote(node, context);
       break;
     case "thematicBreak":
-      out = renderSeparator();
+      markup = renderSeparator();
       break;
     case "table":
-      out = renderTable(node, ctx);
+      markup = renderTable(node, context);
       break;
     case "image":
-      out = renderImage(node, ctx);
+      markup = renderImage(node, context);
       break;
     case "html":
-      out = renderHtml(node, ctx);
+      markup = renderHtml(node, context);
       break;
     case "yaml":
       // Frontmatter: never part of post_content. Dropped here; surfaced via
       // parseMarkdownDocument instead.
-      out = null;
+      markup = null;
       break;
     case "definition":
     case "footnoteDefinition":
       // Link-reference / footnote definitions emit no standalone block.
-      out = null;
+      markup = null;
       break;
     default:
-      out = renderUnsupported(node, ctx);
+      markup = renderUnsupported(node, context);
       break;
   }
-  return out;
+  return markup;
 }
 
 /** Fallback for block nodes we don't explicitly handle. */
-function renderUnsupported(node: RootContent, ctx: RenderContext): string | null {
-  let out: string | null = null;
-  if (ctx.options.unsupported === "skip") {
-    out = null;
+function renderUnsupported(node: RootContent, context: RenderContext): string | null {
+  let markup: string | null = null;
+  if (context.options.unsupported === "skip") {
+    markup = null;
   } else {
     const value = (node as { value?: string }).value;
     if (typeof value === "string" && value !== "") {
-      out = `<!-- wp:html -->\n${value}\n<!-- /wp:html -->`;
+      markup = `<!-- wp:html -->\n${value}\n<!-- /wp:html -->`;
     }
   }
-  return out;
+  return markup;
 }
 
 /** Convert Markdown to one string per top-level block. */
